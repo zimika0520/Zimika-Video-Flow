@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { readRuntimeDirectorPlan } from "@/lib/director-plan";
-import { validateProductionGateFiles } from "@/lib/production-gate";
+import { readJsonIfExists, validateProductionGateFiles } from "@/lib/production-gate";
 import { readRuntimeStyleProfile } from "@/lib/style-profile";
 import { parseProviderNativeSubtitleTimeline } from "@/lib/tts-provider";
 import type { RuntimeAssetManifest, RuntimeVideoBrief, RuntimeVisualManifest, Scene } from "@/lib/types";
@@ -35,9 +35,15 @@ const main = async () => {
     scenes: renderData.scenes,
     captions: subtitleTimeline.segments,
     subtitleTimeline,
-    videoBrief: await readJson<RuntimeVideoBrief>(requiredArg("video-brief")),
-    assetManifest: await readJson<RuntimeAssetManifest>(requiredArg("asset-manifest")),
-    visualManifest: await readJson<RuntimeVisualManifest>(requiredArg("visual-manifest")),
+    videoBrief: args.get("video-brief")
+      ? await readJsonIfExists<RuntimeVideoBrief>(args.get("video-brief")!)
+      : undefined,
+    assetManifest: args.get("asset-manifest")
+      ? await readJsonIfExists<RuntimeAssetManifest>(args.get("asset-manifest")!)
+      : undefined,
+    visualManifest: args.get("visual-manifest")
+      ? await readJsonIfExists<RuntimeVisualManifest>(args.get("visual-manifest")!)
+      : undefined,
     directorPlan: await readRuntimeDirectorPlan(requiredArg("director-plan")),
     styleProfile: await readRuntimeStyleProfile(requiredArg("style-profile")),
     audioPath: requiredArg("audio"),

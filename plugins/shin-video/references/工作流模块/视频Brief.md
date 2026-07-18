@@ -1,5 +1,5 @@
 ---
-name: video-brief-builder
+module: 视频Brief
 description: 在口播确认前后生成 Shin-video 的制作源头 RUN_DIR/video-brief.json，锁定主题、观众、钩子、证据、视觉方向和字幕策略。
 ---
 

@@ -2,10 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { errorJson, okJson } from "@/lib/api-response";
-import {
-  parseProviderNativeSubtitleTimeline,
-  validateSubtitleTimelineFiles,
-} from "@/lib/tts-provider";
+import { parseProviderNativeSubtitleTimeline } from "@/lib/tts-provider";
 
 const allowedExtensions = new Set([".mp3", ".wav", ".m4a"]);
 
@@ -59,11 +56,6 @@ export async function POST(request: Request) {
       await writeFile(tempAudioPath, Buffer.from(await file.arrayBuffer()));
       await writeFile(tempVoiceoverPath, `${voiceoverText.replace(/(?:\r?\n)+$/, "")}\n`, "utf8");
       await writeFile(tempTimelinePath, `${JSON.stringify(timeline, null, 2)}\n`, "utf8");
-      await validateSubtitleTimelineFiles({
-        timeline,
-        audioPath: tempAudioPath,
-        voiceoverPath: tempVoiceoverPath,
-      });
 
       await rename(tempAudioPath, audioPath);
       await rename(tempVoiceoverPath, voiceoverPath);

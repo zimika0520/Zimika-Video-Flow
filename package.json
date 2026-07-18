@@ -15,8 +15,6 @@
     "verify-workflow": "npm run doctor && npm run verify-skill-visual-gate && npm run verify-delivery && npm run test && npm run build",
     "verify-skill-visual-gate": "node scripts/validate-skill-visual-gate.mjs",
     "remotion:studio": "remotion studio remotion/index.ts",
-    "render:preview": "tsx scripts/render-preview.ts preview",
-    "render:final": "tsx scripts/render-preview.ts final",
     "render:visual-samples": "tsx scripts/render-visual-samples.ts",
     "test:illustrated-scene": "tsx scripts/test-illustrated-scene.ts"
   },

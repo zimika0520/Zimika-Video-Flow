@@ -28,13 +28,6 @@ describe("runtime style profiles", () => {
         sceneTypes: expect.arrayContaining(["impact-hook", "data-breakdown", "relationship-map", "summary-card"]),
         visualModules: expect.arrayContaining(["transforms", "layers", "transitions", "effects", "fonts", "measuring", "randomness", "animation-math", "svg-path", "color-interpolation"]),
       },
-      antiRepetitionRules: {
-        maxSameSceneTypeInRow: 1,
-        maxSameMotionVariantInRow: 1,
-        minShotStylesPerVideo: 3,
-        requireMemoryFrame: true,
-        minSceneTypesPerVideo: 3,
-      },
       directorSystem: {
         shotStyles: expect.arrayContaining(["Burst", "Flow", "Reveal", "Zoom", "Split", "Collapse"]),
         entranceAnimations: expect.arrayContaining(["fadeBlurIn", "slideParallaxIn", "maskReveal", "zoomIn", "kineticPop"]),
@@ -43,6 +36,7 @@ describe("runtime style profiles", () => {
       },
     });
 
+    expect(fastStyle).not.toHaveProperty("antiRepetitionRules");
     expect(fastStyle.recipeSystem?.visualModules).not.toContain("noise");
     expect(fastStyle.visualFoundation.background.noise).toEqual({ enabled: false, opacity: 0 });
   });

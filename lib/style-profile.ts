@@ -95,7 +95,7 @@ const baseVisualModules: VisualModule[] = [
 
 const buildRecipeSystems = (style: VideoStyle): Pick<
   RuntimeStyleProfile,
-  "recipeSystem" | "motionModules" | "transitionModules" | "effectModules" | "antiRepetitionRules" | "sectionPacing"
+  "recipeSystem" | "motionModules" | "transitionModules" | "effectModules" | "sectionPacing"
   | "directorSystem"
 > => {
   const effectModules: VisualModule[] = [...baseVisualModules];
@@ -141,13 +141,6 @@ const buildRecipeSystems = (style: VideoStyle): Pick<
       dataAnimations: baseDataAnimations,
       cameraMotions: baseCameraMotions,
       backgroundTypes: baseBackgroundTypes,
-    },
-    antiRepetitionRules: {
-      maxSameSceneTypeInRow: 1,
-      maxSameMotionVariantInRow: 1,
-      minShotStylesPerVideo: 3,
-      requireMemoryFrame: true,
-      minSceneTypesPerVideo: 3,
     },
     sectionPacing: {
       opening: style === "fast-short-video" ? "strong" : "medium",

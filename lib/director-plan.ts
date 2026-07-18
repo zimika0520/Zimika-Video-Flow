@@ -39,7 +39,13 @@ export const videoDirectorWorkflow: VideoDirectorWorkflow = {
     upstream: ["Product Launch", "Recurring Data Report", "Narrative Intro", "Technical Demo", "Growth Marketing"],
     shinVideo: ["news-commentary", "finance-explainer", "event-breakdown", "tech-demo", "narrative-explainer"],
   },
-  expertReviewProtocol: ["director", "information-design", "motion-design", "caption-safety", "audience-comprehension"],
+  expertReviewProtocol: [
+    "director",
+    "information-design",
+    "motion-design",
+    "caption-safety",
+    "audience-comprehension",
+  ],
 };
 
 export const remotionExecutionContract: RemotionExecutionContract = {
@@ -56,7 +62,7 @@ export const remotionExecutionContract: RemotionExecutionContract = {
     "RUN_DIR/subtitle-timeline.json",
     "口播音频.mp3",
   ],
-  requiredOutputs: ["RUN_DIR/preview.mp4", "<项目目录>/<视频标题>.mp4"],
+  requiredOutputs: ["<项目目录>/<视频标题>.mp4"],
   remotionRules: [
     "frame-driven-animation",
     "clamped-interpolation",
@@ -178,6 +184,7 @@ const createDirectorScriptMarkdown = (directorScript: RuntimeDirectorScript): st
     `- 来源：${videoDirectorWorkflow.sourceSkill}`,
     `- 四阶段：${videoDirectorWorkflow.adaptedPhases.join(" -> ")}`,
     "- 场景原则：每个 scene 只表达一个核心 idea",
+    `- 专家审片：${videoDirectorWorkflow.expertReviewProtocol.join(" / ")}`,
     "- Remotion 执行：按 director-plan 执行，字幕独立跟音频，主画面只解释/强化/可视化",
     "",
     "## 审阅清单",
@@ -298,7 +305,13 @@ export const readRuntimeDirectorPlan = async (directorPlanPath: string): Promise
 
   return {
     ...plan,
-    videoDirectorWorkflow: plan.videoDirectorWorkflow ?? videoDirectorWorkflow,
+    videoDirectorWorkflow: {
+      ...videoDirectorWorkflow,
+      ...plan.videoDirectorWorkflow,
+      expertReviewProtocol:
+        plan.videoDirectorWorkflow?.expertReviewProtocol
+        ?? videoDirectorWorkflow.expertReviewProtocol,
+    },
     remotionExecutionContract: plan.remotionExecutionContract ?? remotionExecutionContract,
   };
 };

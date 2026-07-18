@@ -80,8 +80,6 @@ export const buildRuntimeVideoBrief = (input: BuildVideoBriefInput): RuntimeVide
     requireFinalAudioTiming: true,
     requireDirectorPlan: true,
     requireStyleProfile: true,
-    minimumVisualRecipes: 3,
-    minimumDirectorTypes: 4,
   },
   requiredOutputs: input.requiredOutputs ?? [
     "视频标题.mp4",

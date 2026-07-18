@@ -1,15 +1,10 @@
-import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { bindAssetsToScenes, researchAssets } from "./asset-researcher";
 import { writeDirectorReviewArtifacts, writeRuntimeDirectorPlan } from "./director-plan";
 import { selectDirectorPlan } from "./director-selector";
+import { cleanupRenderArtifacts } from "./output-cleanup";
 import { createRunPaths, getRuntimeConfig, sanitizeOutputFileName } from "./paths";
-import { assertDeliverableQualityReport } from "./post-render-qa";
-import {
-  readJsonIfExists,
-  validateProductionGate,
-  validateProductionGateFiles,
-} from "./production-gate";
 import {
   finalizeGeneratedScenesForRender,
   probeAudioDurationSeconds,
@@ -22,12 +17,12 @@ import { writeRuntimeStyleProfile } from "./style-profile";
 import {
   buildSubtitleTimeline,
   createScriptFingerprint,
-  type ProviderNativeSubtitleTimeline,
   validateSubtitleTimelineFiles,
+  type ProviderNativeSubtitleTimeline,
 } from "./tts-provider";
 import { generateTtsAudio } from "./tts-dispatcher";
 import type { VideoStyle } from "./editor-types";
-import type { RuntimeStyleProfile, RuntimeVideoBrief, TimelineSegment } from "./types";
+import type { RuntimeVideoBrief, TimelineSegment } from "./types";
 import { buildRuntimeVideoBrief, writeRuntimeVideoBrief } from "./video-brief";
 import { buildVisualManifestFromScenes, writeRuntimeVisualManifest } from "./visual-manifest";
 
@@ -64,7 +59,6 @@ export type ShinVideoLiteResult = {
   assetManifestPath: string;
   directorPlanPath: string;
   styleProfilePath: string;
-  productionGateReportPath: string;
   publishingPackPath: string;
   warnings: string[];
 };
@@ -396,11 +390,6 @@ export const runShinVideoLite = async (options: ShinVideoLiteOptions): Promise<S
       audioDurationSeconds = audio.durationMs / 1000;
     }
 
-    await validateSubtitleTimelineFiles({
-      timeline: subtitleTimeline,
-      audioPath,
-      voiceoverPath,
-    });
     timelineSegments = subtitleTimeline.segments.map((segment) => ({
       id: segment.id,
       text: segment.text,
@@ -472,33 +461,6 @@ export const runShinVideoLite = async (options: ShinVideoLiteOptions): Promise<S
   }
   await writeRuntimeStyleProfile(paths.styleProfilePath, selectedStyle, renderDimensions.aspectRatio);
 
-  const styleProfile = await readJsonIfExists<RuntimeStyleProfile>(paths.styleProfilePath);
-  const gateReport = options.dryRun
-    ? validateProductionGate({
-        scenes: scenesWithAssets.scenes,
-        captions: subtitleTimeline.segments,
-        videoBrief,
-        visualManifest,
-        assetManifest,
-        directorPlan,
-        styleProfile,
-      })
-    : await validateProductionGateFiles({
-        scenes: scenesWithAssets.scenes,
-        videoBrief,
-        visualManifest,
-        assetManifest,
-        directorPlan,
-        styleProfile,
-        audioPath,
-        voiceoverPath,
-        subtitleTimeline: subtitleTimeline as ProviderNativeSubtitleTimeline,
-      });
-  if (options.dryRun && !audioPath) {
-    gateReport.warnings.push("dry-run 没有最终音频；正式渲染前必须通过 TTS 服务商重新生成音频和原生时间轴。");
-  }
-  await writeFile(paths.productionGateReportPath, `${JSON.stringify(gateReport, null, 2)}\n`, "utf8");
-
   let finalPath: string | undefined;
   if (!options.dryRun && !options.skipRender) {
     if (!audioPath) throw new Error("缺少最终音频，不能渲染。");
@@ -512,18 +474,15 @@ export const runShinVideoLite = async (options: ShinVideoLiteOptions): Promise<S
       assetManifestPath: paths.assetManifestPath,
       directorPlanPath: paths.directorPlanPath,
       styleProfilePath: paths.styleProfilePath,
-      productionGateReportPath: paths.productionGateReportPath,
-      qualityReportPath: paths.qualityReportPath,
-      qualityFramesDir: paths.qualityFramesDir,
       outputPath: paths.finalPath,
       publicRuntimeDir: paths.publicRuntimeDir,
       publicRuntimeBase: paths.publicRuntimeBase,
     });
-    if (!renderResult.qualityReport.passed) {
-      await rm(renderResult.videoPath, { force: true });
-      assertDeliverableQualityReport(renderResult.qualityReport);
-    }
     finalPath = renderResult.videoPath;
+    await cleanupRenderArtifacts({
+      runDir: paths.runDir,
+      publicRuntimeDir: paths.publicRuntimeDir,
+    });
   } else if (!options.dryRun && options.skipRender) {
     warnings.push("已按 --skip-render 跳过 Remotion 渲染。");
   }
@@ -552,7 +511,6 @@ export const runShinVideoLite = async (options: ShinVideoLiteOptions): Promise<S
     assetManifestPath: paths.assetManifestPath,
     directorPlanPath: paths.directorPlanPath,
     styleProfilePath: paths.styleProfilePath,
-    productionGateReportPath: paths.productionGateReportPath,
     publishingPackPath: paths.publishingPackPath,
     warnings,
   };

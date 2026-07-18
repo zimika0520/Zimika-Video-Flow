@@ -314,7 +314,50 @@ describe("production gate", () => {
     expect(report.passed).toBe(true);
   });
 
-  test("blocks rendering when visual manifest is missing or stale", () => {
+  test("blocks only missing render-critical inputs", () => {
+    const report = validateProductionGate({ scenes: [] });
+
+    expect(report.passed).toBe(false);
+    expect(report.errors).toEqual(
+      expect.arrayContaining([
+        "runtime/scenes.json 没有可渲染 scenes",
+        "缺少 runtime/director-plan.json 或 directorPlanVersion",
+        "缺少 runtime/style-profile.json 或 styleProfileVersion",
+        "缺少最终口播音频，不能渲染",
+        "缺少确认后的口播文案，不能渲染",
+        "缺少服务商原生 subtitle-timeline.json，不能渲染",
+      ]),
+    );
+  });
+
+  test("blocks a director plan that no longer matches the current scenes", () => {
+    const videoBrief = buildRuntimeVideoBrief({
+      topic: "导演指纹测试",
+      coreAngle: "修改场景后旧导演方案必须失效",
+      whyWatch: "避免错误镜头进入渲染",
+      plainAnswer: "重新生成导演方案。",
+    });
+    const visualManifest = buildVisualManifestFromScenes(scenes);
+    const directorPlan = buildRuntimeDirectorPlan({ scenes, videoBrief, visualManifest });
+    const changedScenes = scenes.map((scene, index) =>
+      index === 0 ? { ...scene, subtitle: "已经修改的第一句口播字幕。" } : scene,
+    );
+
+    const report = validateProductionGate({
+      scenes: changedScenes,
+      directorPlan,
+      styleProfile: defaultStyleProfile,
+      audioPath: existingAudioPath,
+      ...buildProviderTimelineFixture(changedScenes),
+    });
+
+    expect(report.passed).toBe(false);
+    expect(report.errors.join("\n")).toContain(
+      "RUN_DIR/director-plan.json 与当前 scenes.json 不匹配",
+    );
+  });
+
+  test("does not revalidate a missing or stale visual manifest before rendering", () => {
     const videoBrief = buildRuntimeVideoBrief({
       topic: "测试视频",
       coreAngle: "解释一个复杂事件",
@@ -335,12 +378,11 @@ describe("production gate", () => {
       ...buildProviderTimelineFixture(scenes),
     });
 
-    expect(report.passed).toBe(false);
-    expect(report.errors.join("\n")).toContain("visual-manifest 缺少 scene-4");
-    expect(report.errors.join("\n")).toContain("runtime/visual-manifest.json 与当前 scenes.json 不匹配");
+    expect(report.passed).toBe(true);
+    expect(report.errors).toEqual([]);
   });
 
-  test("blocks full subtitle duplication in the main visual", () => {
+  test("does not recheck full subtitle duplication before rendering", () => {
     const duplicatedScenes = [
       {
         ...scenes[0],
@@ -368,17 +410,8 @@ describe("production gate", () => {
       ...buildProviderTimelineFixture(duplicatedScenes),
     });
 
-    expect(report.passed).toBe(false);
-    expect(report.errors.join("\n")).toContain("主画面疑似复读完整字幕");
-    expect(report.issues).toContainEqual(
-      expect.objectContaining({
-        code: "scene.subtitle-duplication",
-        stage: "pre-render",
-        severity: "error",
-        sceneId: "scene-1",
-        suggestedAction: "shorten-copy",
-      }),
-    );
+    expect(report.passed).toBe(true);
+    expect(report.errors).toEqual([]);
   });
 
   test("does not block a valid video solely because a scene is long", () => {
@@ -419,7 +452,7 @@ describe("production gate", () => {
     expect(report.errors.join("\n")).not.toContain("镜头时长必须小于 10 秒");
   });
 
-  test("treats scene density and ten-second duration as review guidance, not a render blocker", () => {
+  test("does not add daily review warnings for scene density or duration", () => {
     const longScenes = Array.from({ length: 6 }, (_, index): Scene => ({
       ...scenes[index % scenes.length],
       id: `long-${index + 1}`,
@@ -447,11 +480,10 @@ describe("production gate", () => {
 
     expect(report.errors.join("\n")).not.toContain("60 秒视频至少需要 7 个");
     expect(report.errors.join("\n")).not.toContain("镜头时长必须小于 10 秒");
-    expect(report.warnings.join("\n")).toContain("镜头密度");
-    expect(report.warnings.join("\n")).toContain("镜头时长");
+    expect(report.warnings).toEqual([]);
   });
 
-  test("reports declared visual form repetition as a warning for post-render review", () => {
+  test("does not add a production-gate warning for declared visual form repetition", () => {
     const repeatedScenes = Array.from({ length: 8 }, (_, index): Scene => {
       const source = scenes[index % 4];
       return {
@@ -464,7 +496,7 @@ describe("production gate", () => {
     const report = buildGateReport(repeatedScenes);
 
     expect(report.errors.join("\n")).not.toContain("视觉形式不足：目标 5 种，当前只有 4 种");
-    expect(report.warnings.join("\n")).toContain("视觉形式");
+    expect(report.warnings).toEqual([]);
   });
 
   test("does not count scene type names as distinct forms when the renderer family is the same", () => {
@@ -493,10 +525,10 @@ describe("production gate", () => {
 
     expect(report.errors).not.toContain("视觉形式不足：目标 5 种，当前只有 1 种");
     expect(report.errors).not.toContain("same-renderer-2 与前一镜头使用了完全相同的视觉形式");
-    expect(report.warnings.join("\n")).toContain("最终构图");
+    expect(report.warnings).toEqual([]);
   });
 
-  test("blocks production when the only assets are ai-generated concepts without evidence records", () => {
+  test("does not revalidate asset evidence records before rendering", () => {
     const videoBrief = buildRuntimeVideoBrief({
       topic: "AI 概念图门禁测试",
       audience: "科技观众",
@@ -562,12 +594,11 @@ describe("production gate", () => {
       ...buildProviderTimelineFixture(conceptScenes),
     });
 
-    expect(report.passed).toBe(false);
-    expect(report.errors).toContain("asset-manifest 缺少 evidenceRecords，不能证明素材来源");
-    expect(report.errors).toContain("asset-manifest 缺少来源文章或外部资料证据记录");
+    expect(report.passed).toBe(true);
+    expect(report.errors).toEqual([]);
   });
 
-  test("blocks scene bindings that reference an asset id missing from the manifest", () => {
+  test("does not revalidate scene asset bindings before rendering", () => {
     const videoBrief = buildRuntimeVideoBrief({
       topic: "素材绑定完整性测试",
       coreAngle: "绑定必须指向真实资产",
@@ -591,11 +622,11 @@ describe("production gate", () => {
       ...buildProviderTimelineFixture(scenes),
     });
 
-    expect(report.passed).toBe(false);
-    expect(report.errors).toContain("scene-1 绑定了不存在的素材资产 missing-asset");
+    expect(report.passed).toBe(true);
+    expect(report.errors).toEqual([]);
   });
 
-  test("blocks assets captured by AI generation when their runtime type and concept boundary are inconsistent", () => {
+  test("does not revalidate AI asset metadata before rendering", () => {
     const videoBrief = buildRuntimeVideoBrief({
       topic: "AI 资产边界测试",
       coreAngle: "生成图不能伪装成事实素材",
@@ -643,12 +674,11 @@ describe("production gate", () => {
       ...buildProviderTimelineFixture(conceptScenes),
     });
 
-    expect(report.passed).toBe(false);
-    expect(report.errors).toContain("AI 生成素材 generated-mask 必须使用 ai-generated 类型");
-    expect(report.errors).toContain("AI 生成素材 generated-mask 必须使用 concept 角色");
+    expect(report.passed).toBe(true);
+    expect(report.errors).toEqual([]);
   });
 
-  test("blocks bound AI concepts that are missing from scene images or lack required treatment metadata", () => {
+  test("does not revalidate AI concept bindings before rendering", () => {
     const videoBrief = buildRuntimeVideoBrief({
       topic: "概念图运行时完整性测试",
       coreAngle: "清单绑定必须真正进入场景",
@@ -692,9 +722,8 @@ describe("production gate", () => {
       ...buildProviderTimelineFixture(scenes),
     });
 
-    expect(report.passed).toBe(false);
-    expect(report.errors).toContain("scene-1 绑定的 AI 概念图 partial-concept.png 未进入 scene.images");
-    expect(report.errors).toContain("AI 生成素材 partial-concept 使用局部并排形式时必须提供 factLabel");
+    expect(report.passed).toBe(true);
+    expect(report.errors).toEqual([]);
   });
 
   test("counts the generated concept treatment as the final rendered visual form", () => {
@@ -768,10 +797,10 @@ describe("production gate", () => {
 
     expect(report.errors).not.toContain("视觉形式不足：目标 4 种，当前只有 3 种");
     expect(report.errors).not.toContain("concept-form-2 与前一镜头使用了完全相同的视觉形式");
-    expect(report.warnings.join("\n")).toContain("最终构图");
+    expect(report.warnings).toEqual([]);
   });
 
-  test("blocks a specialized scene whose required content was removed", () => {
+  test("does not repeat specialized scene contract review before rendering", () => {
     const invalidScenes: Scene[] = scenes.map((scene, index) =>
       index === 1
         ? {
@@ -796,15 +825,9 @@ describe("production gate", () => {
     );
 
     const report = buildGateReport(invalidScenes);
-    expect(report.passed).toBe(false);
-    expect(report.issues).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: "director.content.required-field",
-          sceneId: "scene-2",
-        }),
-      ]),
-    );
+    expect(report.passed).toBe(true);
+    expect(report.errors).toEqual([]);
+    expect(report.issues).toEqual([]);
   });
 
   test("counts renderer family and treatment, not director names alone", () => {
@@ -820,7 +843,7 @@ describe("production gate", () => {
 
     const report = buildGateReport(sameForm);
     expect(report.errors.join("\n")).not.toContain("当前只有 1 种");
-    expect(report.warnings.join("\n")).toContain("视觉形式");
+    expect(report.warnings).toEqual([]);
   });
 
   test("does not block rendering on a persisted renderer-family quota", () => {
@@ -832,7 +855,7 @@ describe("production gate", () => {
     }));
     const report = buildGateReport(twoFamilies);
     expect(report.errors.join("\n")).not.toContain("目标 3 个渲染家族");
-    expect(report.warnings.join("\n")).toContain("渲染家族");
+    expect(report.warnings).toEqual([]);
   });
 
   test("does not block rendering when a director target differs from a canonical formula", () => {
@@ -850,7 +873,7 @@ describe("production gate", () => {
         "director-plan 的渲染家族推荐值或质量底线与标准公式不一致",
       ]),
     );
-    expect(report.warnings.join("\n")).toContain("质量目标");
+    expect(report.warnings).toEqual([]);
   });
 
   test("flags one AI concept image reused as full-screen wallpaper for post-render review", () => {
@@ -883,8 +906,6 @@ describe("production gate", () => {
 
     const report = buildGateReport(repeatedConcept, assetManifest);
     expect(report.errors.join("\n")).not.toContain("全屏静态壁纸");
-    expect(report.warnings.join("\n")).toContain(
-      "AI 概念图 same-concept 被多个镜头绑定为全屏构图",
-    );
+    expect(report.warnings).toEqual([]);
   });
 });

@@ -8,29 +8,15 @@ type Check = {
 
 const root = process.cwd();
 const pluginRoot = "plugins/shin-video";
+const publicSkillPath = `${pluginRoot}/skills/shin-video/SKILL.md`;
 
-const requiredDirectorTypes = [
-  "Hero",
-  "Timeline",
-  "SystemMap",
-  "DataExplosion",
-  "Contrast",
-  "SpecSheet",
-  "Pricing",
-  "Pause",
-  "Summary",
-  "EvidenceHero",
-  "KeywordInvestigation",
-  "FinancialMeter",
-  "SystemStack",
-  "DependencyMap",
-  "QuestionPause",
-  "BarrierWall",
-  "EvidenceReturn",
-  "IndustrySignal",
-  "CompetitionLayerStack",
-  "FinalJudgement",
-];
+const requiredRemotionPackages = {
+  remotion: "4.0.484",
+  "@remotion/cli": "4.0.484",
+  "@remotion/bundler": "4.0.484",
+  "@remotion/renderer": "4.0.484",
+  zod: "4.3.6",
+};
 
 const requiredVisualLibraryFiles = [
   "backgrounds.tsx",
@@ -47,33 +33,6 @@ const requiredVisualLibraryFiles = [
   "types.ts",
 ];
 
-const requiredSkills = [
-  "shin-video-lite",
-  "shin-video-director",
-  "video-brief-builder",
-  "web-article-cleaner",
-  "voiceover-writer",
-  "audio-checker",
-  "scene-generator",
-  "subtitle-rhythm-builder",
-  "browser-evidence-capture",
-  "asset-researcher",
-  "visual-manifest-builder",
-  "remotion-video-director",
-  "style-consultant",
-  "animation-preset-builder",
-  "production-gate-checker",
-  "remotion-renderer",
-];
-
-const requiredRemotionPackages = {
-  remotion: "4.0.484",
-  "@remotion/cli": "4.0.484",
-  "@remotion/bundler": "4.0.484",
-  "@remotion/renderer": "4.0.484",
-  zod: "4.3.6",
-};
-
 const requiredTtsFiles = [
   "lib/tts-provider.ts",
   "lib/tts-dispatcher.ts",
@@ -83,7 +42,6 @@ const requiredTtsFiles = [
 ];
 
 const file = (relativePath: string) => path.join(root, relativePath);
-
 const read = (relativePath: string) => readFileSync(file(relativePath), "utf8");
 
 const assert = (condition: unknown, message: string): void => {
@@ -97,8 +55,7 @@ const assertFile = (relativePath: string): void => {
 };
 
 const assertContains = (relativePath: string, pattern: RegExp, message: string): void => {
-  const text = read(relativePath);
-  assert(pattern.test(text), `${relativePath}: ${message}`);
+  assert(pattern.test(read(relativePath)), `${relativePath}: ${message}`);
 };
 
 const packageJson = JSON.parse(read("package.json")) as {
@@ -106,25 +63,19 @@ const packageJson = JSON.parse(read("package.json")) as {
   dependencies?: Record<string, string>;
 };
 
+const readJson = <T>(relativePath: string): T => JSON.parse(read(relativePath)) as T;
+
 const checks: Check[] = [
   {
-    name: "package scripts expose full workflow verification",
+    name: "installation and release commands are available",
     run: () => {
       assert(packageJson.scripts?.doctor === "tsx scripts/doctor.ts", "package.json must expose npm run doctor");
-      assert(
-        packageJson.scripts?.["verify-delivery"] === "node scripts/validate-delivery-polish.mjs",
-        "package.json must expose npm run verify-delivery",
-      );
-      assert(
-        packageJson.scripts?.["verify-workflow"] === "npm run doctor && npm run verify-skill-visual-gate && npm run verify-delivery && npm run test && npm run build",
-        "package.json must expose npm run verify-workflow",
-      );
-      assert(packageJson.scripts?.["production-gate"] === "tsx scripts/production-gate.ts", "package.json must expose npm run production-gate");
-      assert(packageJson.scripts?.["shin-video:lite"] === "tsx scripts/shin-video-lite.ts", "package.json must expose npm run shin-video:lite");
+      assert(packageJson.scripts?.build, "package.json must expose npm run build");
+      assert(packageJson.scripts?.["verify-workflow"], "package.json must expose npm run verify-workflow");
     },
   },
   {
-    name: "Remotion dependency versions are pinned for the renderer",
+    name: "Remotion renderer dependencies are pinned",
     run: () => {
       for (const [name, version] of Object.entries(requiredRemotionPackages)) {
         assert(packageJson.dependencies?.[name] === version, `${name} must be exactly ${version}`);
@@ -132,7 +83,7 @@ const checks: Check[] = [
     },
   },
   {
-    name: "provider-native TTS timeline contract is wired",
+    name: "TTS providers return the native timeline required by the workflow",
     run: () => {
       requiredTtsFiles.forEach(assertFile);
       assertContains(
@@ -145,16 +96,7 @@ const checks: Check[] = [
         /subtitleTimelinePath/,
         "voiceover generation must return subtitle-timeline.json",
       );
-      assertContains(
-        "app/api/generate-scenes/route.ts",
-        /parseProviderNativeSubtitleTimeline/,
-        "scene generation must reject non-provider timelines",
-      );
-      assertContains(
-        "app/api/archive-project/route.ts",
-        /audioPackageItemCount/,
-        "project archive must enforce the complete audio package",
-      );
+
       const envExample = read(".env.local.example");
       [
         "SHIN_VIDEO_TTS_PROVIDER",
@@ -167,167 +109,116 @@ const checks: Check[] = [
     },
   },
   {
-    name: "Remotion project entry files exist",
+    name: "final render pipeline is wired to the production gate",
     run: () => {
       ["remotion/index.ts", "remotion/Root.tsx", "remotion/Video.tsx"].forEach(assertFile);
+      ["lib/remotion-render.ts", "lib/production-gate.ts", "app/api/export-video/route.ts"].forEach(assertFile);
+      assertContains(
+        "lib/remotion-render.ts",
+        /validateProductionGateFiles/,
+        "renderer must validate the production gate before rendering",
+      );
+      assertContains(
+        "lib/remotion-render.ts",
+        /renderMedia/,
+        "renderer must invoke Remotion renderMedia for the final video",
+      );
+      assertContains(
+        "app/api/export-video/route.ts",
+        /directorPlanPath/,
+        "final export route must receive director-plan.json",
+      );
+      assertContains(
+        "app/api/export-video/route.ts",
+        /styleProfilePath/,
+        "final export route must receive style-profile.json",
+      );
     },
   },
   {
-    name: "visual component library is included",
+    name: "minimal production gate rejects stale plans and invalid timing",
+    run: () => {
+      [
+        "lib/director-plan.ts",
+        "lib/scene-generator.ts",
+        "lib/production-gate.ts",
+      ].forEach(assertFile);
+      assertContains(
+        "lib/director-plan.ts",
+        /createSourceScenesFingerprint/,
+        "director plan must fingerprint source scenes",
+      );
+      assertContains(
+        "lib/production-gate.ts",
+        /assertDirectorPlanMatchesScenes/,
+        "production gate must reject director plans for stale scenes",
+      );
+      assertContains(
+        "lib/production-gate.ts",
+        /validateSubtitleTimelineFiles/,
+        "production gate must validate final audio and voiceover fingerprints",
+      );
+    },
+  },
+  {
+    name: "visual component library is present and used by the composition",
     run: () => {
       requiredVisualLibraryFiles.forEach((name) => assertFile(`remotion/visual-library/${name}`));
       assertContains(
         "remotion/visual-library/index.ts",
         /export \* from "\.\/director";[\s\S]*export \* from "\.\/finance";[\s\S]*export \* from "\.\/tech";/,
-        "visual-library must export director, finance and tech modules",
-      );
-    },
-  },
-  {
-    name: "TypeScript schema includes every director scene type",
-    run: () => {
-      const types = read("lib/types.ts");
-      requiredDirectorTypes.forEach((type) => {
-        assert(types.includes(`| "${type}"`) || types.includes(`= "${type}"`), `lib/types.ts missing DirectorSceneType ${type}`);
-      });
-    },
-  },
-  {
-    name: "scene-generator uses the semantic director contract",
-    run: () => {
-      const sceneGenerator = read("lib/scene-generator.ts");
-      [
-        "selectDirectorPlan",
-        "directorQualityTargets",
-        "directorContractIssues",
-        "content",
-      ].forEach((needle) => assert(sceneGenerator.includes(needle), `lib/scene-generator.ts missing ${needle}`));
-      assertContains("lib/director-selector.ts", /rendererFamily/, "director selector must assign renderer families");
-      assertContains("lib/director-selector.ts", /visualTreatment/, "director selector must assign visual treatments");
-      assertContains("lib/director-selector.ts", /components/, "director selector must assign derived components");
-      [
-        "lib/scene-semantics.ts",
-        "lib/director-capabilities.ts",
-        "lib/director-contract.ts",
-        "lib/director-content.ts",
-        "lib/director-components.ts",
-        "lib/director-selector.ts",
-        "lib/scene-resegment.ts",
-        "lib/visual-form.ts",
-      ].forEach(assertFile);
-      requiredDirectorTypes.forEach((type) => {
-        assert(sceneGenerator.includes(`${type}:`) || sceneGenerator.includes(`"${type}"`), `scene-generator missing ${type}`);
-      });
-    },
-  },
-  {
-    name: "director-plan fingerprint gate is present",
-    run: () => {
-      assertContains("lib/director-plan.ts", /createSourceScenesFingerprint/, "must create source scenes fingerprint");
-      assertContains("lib/director-plan.ts", /assertDirectorPlanMatchesScenes/, "must fail when director-plan does not match scenes");
-      assertContains("lib/remotion-render.ts", /assertDirectorPlanMatchesScenes/, "renderer must call director-plan fingerprint gate");
-      assertContains("lib/remotion-render.ts", /validateProductionGate/, "renderer must call production gate before rendering");
-      ["lib/video-brief.ts", "lib/asset-researcher.ts", "lib/visual-manifest.ts", "lib/production-gate.ts", "scripts/production-gate.ts"].forEach(assertFile);
-      ["lib/shin-video-lite.ts", "scripts/shin-video-lite.ts", "test/shin-video-lite.test.ts"].forEach(assertFile);
-    },
-  },
-  {
-    name: "asset research is wired into lite and full workflows",
-    run: () => {
-      assertContains("lib/shin-video-lite.ts", /researchAssets/, "lite workflow must collect related evidence assets");
-      assertContains("lib/shin-video-lite.ts", /bindAssetsToScenes/, "lite workflow must bind assets to scenes before director-plan");
-      assertContains("app/api/generate-scenes/route.ts", /researchAssets/, "full workflow must collect related evidence assets");
-      assertContains("app/api/generate-scenes/route.ts", /bindAssetsToScenes/, "full workflow must bind assets to scenes before director-plan");
-      assertContains("app/api/render-preview/route.ts", /assetManifestPath/, "preview render route must pass asset-manifest path");
-      assertContains("app/api/export-video/route.ts", /assetManifestPath/, "final render route must pass asset-manifest path");
-      assertContains("lib/remotion-render.ts", /assetManifestPath/, "renderer must accept asset-manifest path");
-      assertContains("lib/remotion-render.ts", /RuntimeAssetManifest/, "renderer must read runtime asset manifest");
-      assertContains("lib/production-gate.ts", /asset-manifest/, "production gate must validate asset-manifest");
-      assertContains("scripts/production-gate.ts", /asset-manifest/, "production gate CLI must require asset-manifest");
-      assertContains("lib/types.ts", /RuntimeEvidenceRecord/, "types must expose browser/headless evidence records");
-      assertContains("lib/asset-researcher.ts", /captureSourceEvidence/, "asset researcher must capture source article evidence");
-      assertContains("lib/asset-researcher.ts", /evidenceRecords/, "asset researcher must write evidence records into asset-manifest");
-      assertContains("lib/production-gate.ts", /evidenceRecords/, "production gate must validate asset-manifest evidence records");
-      assertFile(`${pluginRoot}/skills/browser-evidence-capture/SKILL.md`);
-    },
-  },
-  {
-    name: "Remotion renderer routes new director types to visual-library scenes",
-    run: () => {
-      const video = read("remotion/Video.tsx");
-      assert(video.includes("VisualLibraryScene"), "Video.tsx must call VisualLibraryScene before legacy fallbacks");
-      requiredDirectorTypes.forEach((type) => {
-        assert(video.includes(`${type}:`) || video.includes(`directorType === "${type}"`), `Video.tsx missing renderer route for ${type}`);
-      });
-    },
-  },
-  {
-    name: "official plugin package contains all required skills",
-    run: () => {
-      requiredSkills.forEach((skill) => assertFile(`${pluginRoot}/skills/${skill}/SKILL.md`));
-    },
-  },
-  {
-    name: "renderer and director skills require full renderer verification",
-    run: () => {
-      [
-        `${pluginRoot}/skills/shin-video-director/SKILL.md`,
-        `${pluginRoot}/skills/remotion-renderer/SKILL.md`,
-        `${pluginRoot}/skills/remotion-video-director/SKILL.md`,
-      ].forEach((relativePath) => {
-        assertContains(relativePath, /npm run doctor/, "must tell Agent/user to run the renderer doctor");
-        assertContains(relativePath, /RUN_DIR\/director-plan\.json/, "must require director-plan.json");
-        assertContains(relativePath, /RUN_DIR\/style-profile\.json/, "must require style-profile.json");
-        assertContains(relativePath, /RUN_DIR\/video-brief\.json/, "must require video-brief.json");
-        assertContains(relativePath, /RUN_DIR\/asset-manifest\.json/, "must require asset-manifest.json");
-        assertContains(relativePath, /RUN_DIR\/visual-manifest\.json/, "must require visual-manifest.json");
-        assertContains(relativePath, /sourceScenesFingerprint/, "must require director-plan fingerprint");
-      });
-    },
-  },
-  {
-    name: "official plugin docs expose full-power deployment check",
-    run: () => {
-      [
-        `${pluginRoot}/README.md`,
-        `${pluginRoot}/AGENTS.md`,
-        `${pluginRoot}/references/规范/getting-started.md`,
-        `${pluginRoot}/references/审核规则/agent-guide.md`,
-      ].forEach(assertFile);
-      assertContains(
-        `${pluginRoot}/skills/shin-video-director/SKILL.md`,
-        /npm run doctor/,
-        "must document the full renderer check",
+        "visual library must export director, finance and technology components",
       );
       assertContains(
-        `${pluginRoot}/skills/shin-video-director/SKILL.md`,
-        /npm run verify-workflow/,
-        "must document the full workflow verification",
+        "remotion/Video.tsx",
+        /VisualLibraryScene/,
+        "video composition must route scenes through the visual library",
       );
     },
   },
   {
-    name: "style selection has no hidden default",
+    name: "plugin exposes one public Shin-video entry",
     run: () => {
-      [
-        `${pluginRoot}/skills/style-consultant/SKILL.md`,
-      ].forEach((relativePath) => {
-        assertContains(relativePath, /不设置默认风格/, "style consultant must not set a hidden default");
-        assert(!/如果用户不回复或明确说默认，选择/.test(read(relativePath)), `${relativePath}: must not auto-select a default style`);
-      });
-    },
-  },
-  {
-    name: "official plugin package uses formal names and current rules",
-    run: () => {
-      [
-        `${pluginRoot}/README.md`,
-        `${pluginRoot}/AGENTS.md`,
-        `${pluginRoot}/references/规范/getting-started.md`,
-        `${pluginRoot}/references/审核规则/agent-guide.md`,
-        "scripts/validate-delivery-polish.mjs",
-      ].forEach(assertFile);
+      assertFile(publicSkillPath);
+      assert(!existsSync(file(`${pluginRoot}/skills/shin-video-director/SKILL.md`)), "legacy public director skill must not remain");
+      assert(!existsSync(file(`${pluginRoot}/skills/shin-video-lite/SKILL.md`)), "legacy public lite skill must not remain");
 
+      const workflowManifest = readJson<{
+        name?: string;
+        version?: string;
+        entrySkill?: { name?: string; path?: string };
+        skillCounts?: { total?: number };
+      }>(`${pluginRoot}/workflow-manifest.json`);
+      const codexManifest = readJson<{ name?: string; version?: string }>(`${pluginRoot}/.codex-plugin/plugin.json`);
+      const releaseManifest = readJson<{ name?: string; version?: string }>(`${pluginRoot}/plugin-manifest/plugin.json`);
+
+      assert(workflowManifest.name === "shin-video", "workflow manifest name must be shin-video");
+      assert(workflowManifest.entrySkill?.name === "shin-video", "workflow manifest must expose shin-video");
+      assert(workflowManifest.entrySkill?.path === "skills/shin-video/SKILL.md", "workflow manifest entry path must target the public skill");
+      assert(workflowManifest.skillCounts?.total === 1, "workflow manifest must declare one public skill");
+      [workflowManifest.version, codexManifest.version, releaseManifest.version].forEach((version) => {
+        assert(version === "0.1.2", "all plugin manifests must use version 0.1.2");
+      });
+      assert(codexManifest.name === "shin-video" && releaseManifest.name === "shin-video", "plugin manifest names must match");
+    },
+  },
+  {
+    name: "plugin documentation routes users to the single entry and health checks",
+    run: () => {
+      [
+        `${pluginRoot}/README.md`,
+        `${pluginRoot}/AGENTS.md`,
+        `${pluginRoot}/references/规范/getting-started.md`,
+        `${pluginRoot}/references/审核规则/agent-guide.md`,
+      ].forEach(assertFile);
+      assertContains(publicSkillPath, /npm run doctor/, "public skill must document installation and troubleshooting checks");
+      assertContains(publicSkillPath, /npm run verify-workflow/, "public skill must document release verification");
+      assertContains(publicSkillPath, /日常制作.*不属于|不属于.*日常制作/s, "public skill must keep doctor out of daily video production");
+    },
+  },
+  {
+    name: "plugin package contains only formal delivery materials",
+    run: () => {
       [
         `${pluginRoot}/README-给用户看的.md`,
         `${pluginRoot}/AGENT-先读我.md`,
@@ -359,4 +250,4 @@ if (failures > 0) {
   process.exit(1);
 }
 
-console.log("\nShin-video doctor checks passed. Local engine and official plugin package look deployable.");
+console.log("\nShin-video doctor checks passed. The installed engine and single public plugin entry are ready for use.");

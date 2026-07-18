@@ -81,7 +81,7 @@ const isAllowedPath = (relativePath) => {
     return true;
   }
 
-  if (/^references\/(?:审核规则|规范|行业模板\/visual-library)\/.+\.md$/.test(normalized)) {
+  if (/^references\/(?:审核规则|规范|工作流模块|行业模板\/visual-library)\/.+\.md$/.test(normalized)) {
     return true;
   }
 

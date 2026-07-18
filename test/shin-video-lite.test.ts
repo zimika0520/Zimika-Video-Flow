@@ -68,7 +68,6 @@ describe("shin-video lite one-shot workflow", () => {
     await expect(readFile(result.assetManifestPath, "utf8")).resolves.not.toContain('"url": "inline-article"');
     await expect(readFile(result.directorPlanPath, "utf8")).resolves.toContain("directorPlanVersion");
     await expect(readFile(result.styleProfilePath, "utf8")).resolves.toContain("styleProfileVersion");
-    await expect(readFile(result.productionGateReportPath, "utf8")).resolves.toContain("dry-run");
     await expect(readFile(result.publishingPackPath, "utf8")).resolves.toContain("发布标题");
     await expect(readFile(result.publishingPackPath, "utf8")).resolves.toContain("素材清单");
     const scenes = JSON.parse(await readFile(result.scenesPath, "utf8"));

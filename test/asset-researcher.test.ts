@@ -68,8 +68,6 @@ const brief: RuntimeVideoBrief = {
     requireFinalAudioTiming: true,
     requireDirectorPlan: true,
     requireStyleProfile: true,
-    minimumVisualRecipes: 3,
-    minimumDirectorTypes: 4,
   },
   requiredOutputs: ["final-video", "publishing-pack"],
 };

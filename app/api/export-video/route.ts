@@ -1,8 +1,7 @@
-import { mkdir, rm } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { errorJson, okJson, readJsonBody } from "@/lib/api-response";
 import { cleanupRenderArtifacts } from "@/lib/output-cleanup";
-import { assertDeliverableQualityReport } from "@/lib/post-render-qa";
 import { renderVideo } from "@/lib/remotion-render";
 
 export async function POST(request: Request) {
@@ -18,9 +17,6 @@ export async function POST(request: Request) {
       assetManifestPath?: string;
       directorPlanPath?: string;
       styleProfilePath?: string;
-      productionGateReportPath?: string;
-      qualityReportPath?: string;
-      qualityFramesDir?: string;
       finalPath?: string;
       publicRuntimeDir?: string;
       publicRuntimeBase?: string;
@@ -42,17 +38,10 @@ export async function POST(request: Request) {
       assetManifestPath: body.assetManifestPath,
       directorPlanPath: body.directorPlanPath,
       styleProfilePath: body.styleProfilePath,
-      productionGateReportPath: body.productionGateReportPath,
-      qualityReportPath: body.qualityReportPath,
-      qualityFramesDir: body.qualityFramesDir,
       outputPath: body.finalPath,
       publicRuntimeDir: body.publicRuntimeDir,
       publicRuntimeBase: body.publicRuntimeBase,
     });
-    if (!result.qualityReport.passed) {
-      await rm(result.videoPath, { force: true });
-      assertDeliverableQualityReport(result.qualityReport);
-    }
     await cleanupRenderArtifacts({
       materialPackPath: body.materialPackPath || undefined,
       runDir: dirname(body.scenesPath),

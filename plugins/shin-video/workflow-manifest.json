@@ -1,23 +1,16 @@
 {
   "name": "shin-video",
-  "displayName": "Shin-video 总导演",
-  "version": "0.1.0",
+  "displayName": "Shin-video",
+  "version": "0.1.2",
   "summary": "先完成内容、音频时间轴、素材和导演方案，再由本地 Remotion 引擎渲染视频。",
   "entrySkill": {
-    "name": "shin-video-director",
-    "displayName": "Shin-video 总导演",
-    "path": "skills/shin-video-director/SKILL.md"
-  },
-  "compatibilityEntrySkill": {
-    "name": "shin-video-lite",
-    "displayName": "Shin-video 轻量入口",
-    "path": "skills/shin-video-lite/SKILL.md"
+    "name": "shin-video",
+    "displayName": "Shin-video",
+    "path": "skills/shin-video/SKILL.md"
   },
   "skillCounts": {
-    "total": 16,
-    "controller": 1,
-    "compatibilityEntry": 1,
-    "stage": 14
+    "total": 1,
+    "publicEntry": 1
   },
   "runtime": {
     "runDirectory": "<项目目录>/_runtime/<run-id>/",
@@ -29,6 +22,6 @@
     "文章与外部证据采集",
     "导演方案与视觉清单",
     "Production Gate",
-    "Remotion 预览与最终 MP4"
+    "Remotion 最终 MP4"
   ]
 }

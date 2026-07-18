@@ -10,11 +10,11 @@ Shin-video 不能只把 `RUN_DIR/scenes.json` 直接丢给 Remotion 套模板。
 
 ```text
 RUN_DIR/scenes.json
-→ remotion-video-director
+→ 导演方案
 → RUN_DIR/director-plan.json
-→ animation-preset-builder
+→ 动画与风格系统
 → RUN_DIR/style-profile.json
-→ remotion-renderer
+→ Remotion 渲染
 ```
 
 `RUN_DIR/director-plan.json` 必须说明每一段的叙事功能、主画面信息、字幕安全区、镜头类型、镜头运动、入场动画、强调动画、转场动画、背景角色和组件。

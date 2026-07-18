@@ -2,19 +2,19 @@ import { existsSync, readFileSync } from "node:fs";
 
 const files = {
   director: [
-    "plugins/shin-video/skills/shin-video-director/SKILL.md",
+    "plugins/shin-video/skills/shin-video/SKILL.md",
   ],
   style: [
-    "plugins/shin-video/skills/style-consultant/SKILL.md",
+    "plugins/shin-video/references/工作流模块/视觉风格确认.md",
   ],
   preset: [
-    "plugins/shin-video/skills/animation-preset-builder/SKILL.md",
+    "plugins/shin-video/references/工作流模块/动画与风格系统.md",
   ],
   scene: [
-    "plugins/shin-video/skills/scene-generator/SKILL.md",
+    "plugins/shin-video/references/工作流模块/场景与节奏.md",
   ],
   renderer: [
-    "plugins/shin-video/skills/remotion-renderer/SKILL.md",
+    "plugins/shin-video/references/工作流模块/Remotion渲染.md",
   ],
 };
 
@@ -26,7 +26,7 @@ const checks = [
   },
   {
     group: "director",
-    pattern: /没有 RUN_DIR\/style-profile\.json，不允许调用 remotion-renderer/,
+    pattern: /没有 RUN_DIR\/style-profile\.json，不允许渲染/,
     message: "总导演必须禁止缺少 style-profile 时直接渲染",
   },
   {
@@ -86,7 +86,7 @@ const checks = [
   },
   {
     group: "preset",
-    pattern: /recipeSystem[\s\S]*motionModules[\s\S]*transitionModules[\s\S]*effectModules[\s\S]*antiRepetitionRules/,
+    pattern: /recipeSystem[\s\S]*motionModules[\s\S]*transitionModules[\s\S]*effectModules/,
     message: "动画预设必须输出 recipeSystem 和模块库",
   },
   {
@@ -98,11 +98,6 @@ const checks = [
     group: "scene",
     pattern: /sceneType[\s\S]*layoutRecipe[\s\S]*motionVariant[\s\S]*transition[\s\S]*visualModules[\s\S]*pace/,
     message: "视频场景生成必须输出新视觉编排字段",
-  },
-  {
-    group: "scene",
-    pattern: /连续 2 段声明相同视觉形式或 `motionVariant` 时必须产生告警/,
-    message: "视频场景生成必须有相邻视觉形式防重复规则",
   },
   {
     group: "scene",

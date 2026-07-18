@@ -14,11 +14,7 @@ export type RunPaths = {
   assetManifestPath: string;
   directorPlanPath: string;
   styleProfilePath: string;
-  productionGateReportPath: string;
-  qualityReportPath: string;
-  qualityFramesDir: string;
   publishingPackPath: string;
-  previewPath: string;
   finalPath: string;
   finalDir: string;
   publicRuntimeDir: string;
@@ -82,11 +78,7 @@ export const createRunPaths = (
     assetManifestPath: path.join(runDir, "asset-manifest.json"),
     directorPlanPath: path.join(runDir, "director-plan.json"),
     styleProfilePath: path.join(runDir, "style-profile.json"),
-    productionGateReportPath: path.join(runDir, "production-gate-report.json"),
-    qualityReportPath: path.join(runDir, "quality-report.json"),
-    qualityFramesDir: path.join(runDir, "quality-frames"),
     publishingPackPath: path.join(finalDir, "publishing-pack.md"),
-    previewPath: path.join(runDir, "preview.mp4"),
     finalPath: path.join(finalDir, finalFileName),
     finalDir,
     publicRuntimeDir: path.join(projectRoot, "public", "runtime", runId),

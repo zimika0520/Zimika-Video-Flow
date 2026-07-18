@@ -1,11 +1,11 @@
 ---
-name: remotion-renderer
-description: 调用 Remotion 使用 RUN_DIR/scenes.json、RUN_DIR/style-profile.json 和 口播音频.mp3 渲染 Shin-video 预览视频与最终成片，并做基础质量检查。
+module: Remotion渲染
+description: 调用 Remotion 使用 RUN_DIR/scenes.json、RUN_DIR/style-profile.json 和 口播音频.mp3 直接渲染 Shin-video 最终成片，并做轻量质量检查。
 ---
 
 # Remotion 渲染成片
 
-这是场景四第 10 步，只能在 `remotion-video-director`、`style-consultant` 和 `animation-preset-builder` 完成之后执行。
+这是场景四第 10 步，只能在“导演方案”“视觉风格确认”和“动画与风格系统”完成之后执行。
 
 调用 Remotion 渲染视频。
 
@@ -15,47 +15,37 @@ description: 调用 Remotion 使用 RUN_DIR/scenes.json、RUN_DIR/style-profile.
 
 ```text
 RUN_DIR/scenes.json
-RUN_DIR/video-brief.json
-RUN_DIR/asset-manifest.json
-RUN_DIR/visual-manifest.json
 RUN_DIR/director-plan.json
 RUN_DIR/style-profile.json
 RUN_DIR/subtitle-timeline.json
+口播文案.md
 口播音频.mp3
 ```
+
+`video-brief.json`、`asset-manifest.json` 和 `visual-manifest.json` 是可选的增强输入：存在时继续用于画面和素材绑定，但不会在最终渲染前重复做完整性审查。
 
 ## 渲染前检查
 
 渲染前必须检查：
 
 - 必须存在 `RUN_DIR/scenes.json`
-- 必须存在 `RUN_DIR/video-brief.json`
-- 必须存在 `RUN_DIR/asset-manifest.json`
-- 必须存在 `RUN_DIR/visual-manifest.json`
 - 必须存在 `RUN_DIR/director-plan.json`
 - 必须存在 `RUN_DIR/style-profile.json`
 - 必须存在最终音频对齐的字幕时间轴
+- 必须存在确认后的口播文案
 - 必须存在 `口播音频.mp3`
-- `RUN_DIR/video-brief.json` 必须声明字幕正文来自确认后的口播文案，时间位置来自 TTS 服务商原生时间戳
 - `RUN_DIR/subtitle-timeline.json` 的 `source` 必须是 `provider-native`，并与当前音频和口播文案指纹匹配
-- `RUN_DIR/asset-manifest.json` 必须包含每个 scene 的素材绑定和可追溯 `evidenceRecords`
-- `RUN_DIR/visual-manifest.json` 必须为每个 scene 声明 `visualGoal`、`narrationClaim`、`safeZones` 和 `overlapRisks`
-- `RUN_DIR/director-plan.json` 必须包含 `directorPlanVersion`
-- `RUN_DIR/director-plan.json` 必须包含 `sourceScenesFingerprint`
 - `sourceScenesFingerprint` 必须与当前 `RUN_DIR/scenes.json` 重新计算后的指纹一致
-- `RUN_DIR/director-plan.json` 必须包含 `audioStrategy`
-- `RUN_DIR/director-plan.json` 必须包含 `reviewScorecard`
-- `RUN_DIR/director-plan.json` 的每个 scene 必须包含可执行 `components`
-- `RUN_DIR/style-profile.json` 必须包含 `styleProfileVersion`
-- `RUN_DIR/style-profile.json` 必须包含可执行视觉配置，而不是只有中文描述
 
-缺少 RUN_DIR/director-plan.json 时，停止渲染，回到 `remotion-video-director`，先生成导演方案。
+最终硬门禁不再重复检查 Brief、视觉清单、素材证据、字幕复读、导演语义合同和镜头多样性。这些规则在相应文件生成时处理一次。
 
-如果 `RUN_DIR/scenes.json`、口播文案、素材包、音频时间轴有任何变化，旧 `RUN_DIR/director-plan.json` 一律视为失效。此时不允许“先渲染看看”，必须先回到 `remotion-video-director`，基于当前口播文案、素材包和时间轴重新生成视觉系统、视觉效果和导演方案。
+缺少 RUN_DIR/director-plan.json 时，停止渲染，回到“导演方案”模块，先生成导演方案。
 
-如果 `RUN_DIR/director-plan.json` 缺少 `audioStrategy`、`reviewScorecard`、scene components、用户确认过的导演稿，或仍然像自然语言分镜而不是可执行 DSL，停止渲染，回到 `remotion-video-director` 重新生成。
+如果 `RUN_DIR/scenes.json`、口播文案、素材包、音频时间轴有任何变化，旧 `RUN_DIR/director-plan.json` 一律视为失效。此时不允许“先渲染看看”，必须先回到“导演方案”模块，基于当前口播文案、素材包和时间轴重新生成视觉系统、视觉效果和导演方案。
 
-缺少 RUN_DIR/style-profile.json 时，停止渲染，回到 `style-consultant` 和 `animation-preset-builder`，先询问视觉风格并生成配置。
+如果 `RUN_DIR/director-plan.json` 缺少 `audioStrategy`、`reviewScorecard`、scene components、用户确认过的导演稿，或仍然像自然语言分镜而不是可执行 DSL，停止渲染，回到“导演方案”模块重新生成。
+
+缺少 RUN_DIR/style-profile.json 时，停止渲染，回到“视觉风格确认”和“动画与风格系统”模块，先询问视觉风格并生成配置。
 
 Remotion 模板必须读取 `RUN_DIR/video-brief.json`、`RUN_DIR/asset-manifest.json`、`RUN_DIR/visual-manifest.json`、`RUN_DIR/director-plan.json` 和 `RUN_DIR/style-profile.json`，并把其中的素材绑定、证据记录、`directorType`、`shotStyle`、`cameraMotion`、`visualFoundation`、`motionSystem`、`effectsSystem`、`transitionSystem`、`visualGoal`、`safeZones`、`overlapRisks` 应用到画面。如果模板没有读取这些文件，禁止继续渲染或交付。
 
@@ -88,7 +78,7 @@ visual-manifest.json -> 提供每个镜头的视觉目标、证据素材、安�
 style-profile.json -> 提供统一主题、色彩、字体、安全区、动效强度和防重复规则
 ```
 
-如果一条视频里所有段落都长得一样，或者没有读取 `director-plan.json`、`sceneType` / `motionVariant` / `visualModules`，视为渲染质量检查失败，需要回到 `scene-generator`、`remotion-video-director` 和 `animation-preset-builder` 修正。
+如果一条视频里所有段落都长得一样，或者没有读取 `director-plan.json`、`sceneType` / `motionVariant` / `visualModules`，视为渲染质量检查失败，需要回到“场景与节奏”“导演方案”和“动画与风格系统”模块修正。
 
 ## Remotion 官方实现规则
 
@@ -101,8 +91,7 @@ style-profile.json -> 提供统一主题、色彩、字体、安全区、动效�
 - 资源使用 Remotion 支持的静态文件、图片、字体和音频加载方式。
 - 需要图表、关系图、时间线时，封装为可复用组件，不要每个 scene 重写一套 UI。
   - scene 组件优先来自导演方案里的 `components` 映射和 `../../references/规范/component-library.md`，不要在渲染阶段临时发明整套重复界面。
-- 渲染前必须通过 `production-gate-checker`；production gate 未通过时停止，不允许“先出一版看看”。
-- production gate 中的镜头时长、镜头密度、声明视觉形式数量、renderer family 数量和动效组合数量只产生告警，不得单独阻断渲染。
+- 渲染前必须通过最小 Production Gate；仅音频、时间轴、场景、导演方案和风格配置的关键错误会阻断渲染。
 - 音频按 `audioStrategy` 执行：口播优先；没有音乐素材时不强行加音乐；有音乐时必须 ducking，不能盖住人声。
 - 文字必须限制最大行宽或测量尺寸，避免字幕、图表和标题互相覆盖。
 - 默认不加噪点，不做无意义抖动。
@@ -110,14 +99,6 @@ style-profile.json -> 提供统一主题、色彩、字体、安全区、动效�
 - 普通网页证据、外部截图和来源素材优先于通用主题卡片或固定模板回退。
 
 ## 输出
-
-预览：
-
-```text
-RUN_DIR/preview.mp4
-```
-
-最终：
 
 ```text
 <项目目录>/<视频标题>.mp4
@@ -136,7 +117,7 @@ npm ls zod @remotion/bundler @remotion/cli @remotion/renderer remotion --depth=0
 ffmpeg -version
 ```
 
-`npm run doctor` 是渲染前硬门禁。它必须确认：
+`npm run doctor` 只用于首次安装、引擎更新和故障排查。日常制作不重复运行它。它用于确认：
 
 ```text
 remotion/visual-library 已存在且模块完整
@@ -148,7 +129,7 @@ lib/remotion-render.ts 会执行 production gate
 Skill 文档已要求读取 RUN_DIR/director-plan.json 和 RUN_DIR/style-profile.json
 ```
 
-如果 `npm run doctor` 失败，禁止继续渲染。此时继续跑 Remotion 只会让导演方案退化成旧模板，产出质量不可控。
+如果 `npm run doctor` 在安装、更新或故障排查时失败，先修复环境；日常制作由渲染器内部的 Production Gate 检查当前制作包。
 
 完整交付前建议执行：
 
@@ -192,18 +173,11 @@ npm install remotion@4.0.484 @remotion/cli@4.0.484 @remotion/renderer@4.0.484 @r
 
 ## 渲染规则
 
-- 先生成 `RUN_DIR/preview.mp4`。
-- 用户确认预览后，再输出 `<项目目录>/<视频标题>.mp4`。
+- 直接输出 `<项目目录>/<视频标题>.mp4`。
 - 如果项目目录不存在，先创建。
 - 不要把最终视频输出到其他目录。
 
 ## 命令模板
-
-预览：
-
-```bash
-npm run render:preview
-```
 
 最终成片：
 
@@ -211,7 +185,7 @@ npm run render:preview
 npm run render:final
 ```
 
-如果项目没有这两个脚本，先不要乱猜命令；读取当前项目 `package.json`，找到 Remotion 渲染脚本后再执行。
+如果项目没有该脚本，先不要乱猜命令；读取当前项目 `package.json`，找到 Remotion 渲染脚本后再执行。
 
 ## 基础质量检查
 
@@ -221,25 +195,12 @@ npm run render:final
 - 文件大小是否明显异常。
 - 视频是否能播放。
 - 是否有音频。
-- 是否黑屏。
 - 视频时长是否接近口播音频时长。
-- 字幕和主要文字是否明显溢出。
-- 字幕是否固定在底部安全区，且没有和主画面重叠。
-- 主画面是否没有复述完整字幕。
-- 是否执行了 `audioStrategy`，音乐没有盖住口播。
-- 是否存在 `reviewScorecard`，且没有标记为 `rework` 仍继续导出。
-- 每个 scene 是否生成一张中点代表帧。
-- 相邻镜头最终构图是否经过相似度比较。
-- 是否出现连续 3 个高度相似的最终构图；出现时禁止交付。
-- 导演选中的主视觉素材是否实际进入画面。
-- 同一主视觉素材是否被高频复用；出现时列为返工告警。
-- 字幕安全区、标题、图表、素材主体是否存在遮挡或冲突。
-- 镜头时长、镜头密度、声明视觉形式、renderer family 和动效组合数量只作为审片参考，不得代替逐镜头代表帧检查。
-- Remotion 模板是否真的读取 `RUN_DIR/director-plan.json`、`RUN_DIR/style-profile.json` 与 `RUN_DIR/scenes.json` 的新视觉字段。
-- 是否使用 ffprobe 或等效工具确认音视频流、时长和编码结果。
-- 是否保留质量报告和代表帧供预览审查。
+- 是否有音频。
+- 是否按开头、最高重要度镜头、结尾各成功解码一帧。
+- 导演选中的主视觉素材是否实际进入画面；同一素材高频复用时只给出告警。
 
-预览检查失败时保留质量报告和代表帧供返工；最终导出检查失败时删除失败的最终 MP4，不得交付。
+成片检查失败时删除失败的最终 MP4，不得交付；成功交付后自动删除抽检帧、质量报告和 Production Gate 报告。
 
 ## 失败提示
 

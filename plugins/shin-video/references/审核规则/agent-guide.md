@@ -5,8 +5,7 @@
 ## 一、入口策略
 
 ```text
-所有新请求：使用 shin-video-director。
-既有 shin-video-lite 调用：作为兼容路由转入同一完整链路。
+所有新请求：使用 shin-video。
 ```
 
 对用户只需说明：
@@ -25,12 +24,10 @@
 ../规范/getting-started.md
 ../规范/前期准备说明.md
 ../规范/TTS服务商与Remotion部署说明.md
-../../workflow-manifest.json
-../../skills/shin-video-director/SKILL.md
-../../skills/shin-video-lite/SKILL.md
+../../skills/shin-video/SKILL.md
 ```
 
-再检查：
+首次安装、引擎更新或环境故障排查时，再检查：
 
 ```bash
 node -v
@@ -40,34 +37,13 @@ npx remotion --version
 npm run doctor
 ```
 
-交付前需要全量验证时执行：
+只有用户明确要求完整工程自检，或进行安装、更新、发布和故障排查时执行：
 
 ```bash
 npm run verify-workflow
 ```
 
-`npm run doctor` 未通过时停止制作。不要把只有总控文档、缺少模板或视觉组件的安装描述成完整工作流。
-
-当前公开工作流由 1 个轻量入口、1 个专业总控和 14 个阶段 Skill 组成，共 16 个 Skill。完整工作流至少包含：
-
-```text
-shin-video-director
-shin-video-lite
-web-article-cleaner
-browser-evidence-capture
-video-brief-builder
-voiceover-writer
-audio-checker
-scene-generator
-subtitle-rhythm-builder
-asset-researcher
-visual-manifest-builder
-remotion-video-director
-style-consultant
-animation-preset-builder
-production-gate-checker
-remotion-renderer
-```
+`npm run doctor` 未通过时，说明安装或引擎更新未完成；不要把只有工作流文档、缺少模板或视觉组件的安装描述成完整工作流。日常制作不重复运行该命令。
 
 ## 三、TTS 配置合同
 
@@ -127,37 +103,22 @@ source = provider-native
 
 ```text
 文章或链接
-→ web-article-cleaner
 → 文章正文.md
-→ browser-evidence-capture
-→ video-brief-builder
 → RUN_DIR/video-brief.json
-→ voiceover-writer
 → 口播文案.md
 → TTS 服务商同时生成最终音频和原生时间戳
 → 口播音频.mp3
 → RUN_DIR/subtitle-timeline.json
-→ audio-checker
-→ scene-generator
-→ subtitle-rhythm-builder
 → RUN_DIR/scenes.json
-→ asset-researcher
 → RUN_DIR/asset-manifest.json
-→ visual-manifest-builder
 → RUN_DIR/visual-manifest.json
-→ remotion-video-director
 → RUN_DIR/director-plan.json
-→ style-consultant
-→ animation-preset-builder
 → RUN_DIR/style-profile.json
-→ production-gate-checker
-→ RUN_DIR/production-gate-report.json
-→ remotion-renderer
-→ RUN_DIR/preview.mp4
+→ Remotion 渲染器内部 Production Gate
 → <项目目录>/<视频标题>.mp4
 ```
 
-新请求从 `shin-video-director` 开始。运行引擎若仍保留 `shin-video-lite` 命令，只能将既有调用转入该兼容路由；插件不定义该命令。
+所有新请求从 `shin-video` 开始。内部模块只用于编排，不作为公开安装或调用要求。
 
 ## 五、失效规则
 
@@ -253,33 +214,20 @@ RUN_DIR/style-profile.json
 口播音频.mp3
 ```
 
-依赖检查：
-
-```bash
-npm ls zod @remotion/bundler @remotion/cli @remotion/renderer remotion --depth=0
-npm run doctor
-```
-
-生产门槛未通过时禁止渲染。
+日常制作由渲染器内部执行一次 Production Gate。Production Gate 未通过时禁止渲染；不要重复执行工程依赖检查、`npm run doctor`、测试、构建或发布验证。
 
 ## 九、渲染后验收
 
-预览至少检查：
+成片只做基础媒体有效性检查：
 
 ```text
 视频可播放
 声音存在
 时长接近最终音频
-无黑屏和长空白
-字幕正文正确
-字幕时间与音频一致
-字幕未遮挡主画面
-主画面没有大段复读字幕
-关键素材与口播观点一致
-相邻镜头构图没有连续高度重复
+尺寸正确
 ```
 
-用户确认预览后再导出最终视频。临时帧、自检截图和缓存可在验收期间保留，项目完成后清理。
+最终音频/时间轴校验与 Production Gate 已在渲染前完成；成片通过基础检查即交付。只有用户明确要求审片时才生成预览。成功交付后自动清理临时帧、自检截图、质量报告、生产门禁报告、缓存和可选预览。
 
 ## 十、失败提示
 
@@ -298,7 +246,7 @@ npm run doctor
 缺少 Remotion：
 
 ```text
-当前项目的本地渲染环境不完整。请先安装项目依赖并运行 npm run doctor。
+当前项目的本地渲染环境不完整。请安装项目依赖；首次安装、引擎更新或排查时再运行 npm run doctor。
 ```
 
 生产门槛失败：

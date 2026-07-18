@@ -1,6 +1,6 @@
-import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
-import { assertDirectorPlanMatchesScenes, readRuntimeDirectorPlan } from "./director-plan";
+import { readRuntimeDirectorPlan } from "./director-plan";
 import { resolveMaterialImagePath } from "./material-pack";
 import { readJsonIfExists, validateProductionGateFiles } from "./production-gate";
 import { runPostRenderQa } from "./post-render-qa";
@@ -10,7 +10,7 @@ import {
   parseProviderNativeSubtitleTimeline,
   type ProviderNativeSubtitleTimeline,
 } from "./tts-provider";
-import type { RenderInput, RuntimeAssetManifest, RuntimeDirectorPlan, RuntimeVideoBrief, RuntimeVisualManifest, Scene, VideoQualityReport } from "./types";
+import type { RenderInput, RuntimeAssetManifest, RuntimeDirectorPlan, RuntimeVideoBrief, RuntimeVisualManifest, Scene } from "./types";
 
 export type RenderVideoInput = {
   scenesPath: string;
@@ -23,9 +23,6 @@ export type RenderVideoInput = {
   assetManifestPath?: string;
   directorPlanPath: string;
   styleProfilePath: string;
-  productionGateReportPath?: string;
-  qualityReportPath?: string;
-  qualityFramesDir?: string;
   outputPath: string;
   publicRuntimeDir: string;
   publicRuntimeBase: string;
@@ -39,7 +36,7 @@ const copyRuntimeAssets = async (
   audioPath: string,
   subtitleTimeline: ProviderNativeSubtitleTimeline,
   directorPlan: RuntimeDirectorPlan,
-  styleProfilePath: string,
+  styleProfile: Awaited<ReturnType<typeof readRuntimeStyleProfile>>,
   videoBrief: RuntimeVideoBrief | undefined,
   visualManifest: RuntimeVisualManifest | undefined,
   assetManifest: RuntimeAssetManifest | undefined,
@@ -68,7 +65,6 @@ const copyRuntimeAssets = async (
 
   const audioFileName = path.basename(audioPath);
   await copyFile(audioPath, path.join(publicRuntimeDir, audioFileName));
-  const styleProfile = await readRuntimeStyleProfile(styleProfilePath);
   const directorSceneById = new Map(directorPlan.scenes.map((scene) => [scene.id, scene]));
   const mergeDirectorScene = (scene: Scene): Scene => {
     const directorScene = directorSceneById.get(scene.id);
@@ -137,16 +133,12 @@ export const renderVideo = async ({
   assetManifestPath,
   directorPlanPath,
   styleProfilePath,
-  productionGateReportPath,
-  qualityReportPath,
-  qualityFramesDir,
   outputPath,
   publicRuntimeDir,
   publicRuntimeBase,
-}: RenderVideoInput): Promise<{ videoPath: string; qualityReport: VideoQualityReport }> => {
+}: RenderVideoInput): Promise<{ videoPath: string }> => {
   const renderData = JSON.parse(await readFile(scenesPath, "utf8")) as GeneratedScenes;
   const directorPlan = await readRuntimeDirectorPlan(directorPlanPath);
-  assertDirectorPlanMatchesScenes(directorPlan, renderData.scenes);
   const styleProfile = await readRuntimeStyleProfile(styleProfilePath);
   const videoBrief = videoBriefPath ? await readJsonIfExists<RuntimeVideoBrief>(videoBriefPath) : undefined;
   const visualManifest = visualManifestPath ? await readJsonIfExists<RuntimeVisualManifest>(visualManifestPath) : undefined;
@@ -167,13 +159,6 @@ export const renderVideo = async ({
     voiceoverPath,
   });
 
-  if (productionGateReportPath) {
-    await mkdir(path.dirname(productionGateReportPath), { recursive: true });
-    await import("node:fs/promises").then(({ writeFile }) =>
-      writeFile(productionGateReportPath, `${JSON.stringify(gateReport, null, 2)}\n`, "utf8"),
-    );
-  }
-
   if (!gateReport.passed) {
     throw new Error(`production gate 未通过，停止渲染：${gateReport.errors.join("；")}`);
   }
@@ -184,7 +169,7 @@ export const renderVideo = async ({
     audioPath,
     subtitleTimeline,
     directorPlan,
-    styleProfilePath,
+    styleProfile,
     videoBrief,
     visualManifest,
     assetManifest,
@@ -211,24 +196,17 @@ export const renderVideo = async ({
 
   const postRenderReport = await runPostRenderQa({
     videoPath: outputPath,
-    frameDir: qualityFramesDir ?? path.join(path.dirname(outputPath), "quality-frames"),
     expectedDurationSeconds: renderData.duration,
     expectedWidth: renderData.width,
     expectedHeight: renderData.height,
     scenes: inputProps.scenes,
-    assetManifest,
   });
-  const qualityReport: VideoQualityReport = {
-    ...postRenderReport,
-    passed: gateReport.passed && postRenderReport.passed,
-    errors: [...gateReport.errors, ...postRenderReport.errors],
-    warnings: [...gateReport.warnings, ...postRenderReport.warnings],
-    issues: [...gateReport.issues, ...postRenderReport.issues],
-  };
-  if (qualityReportPath) {
-    await mkdir(path.dirname(qualityReportPath), { recursive: true });
-    await writeFile(qualityReportPath, `${JSON.stringify(qualityReport, null, 2)}\n`, "utf8");
+  if (!postRenderReport.passed) {
+    await rm(outputPath, { force: true });
+    throw new Error(
+      `成片媒体验收失败，停止交付：${postRenderReport.errors.join("；") || "无法验证最终视频"}`,
+    );
   }
 
-  return { videoPath: outputPath, qualityReport };
+  return { videoPath: outputPath };
 };

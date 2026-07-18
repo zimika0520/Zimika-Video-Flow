@@ -6,11 +6,9 @@ import {
   AudioWaveform,
   Check,
   ChevronLeft,
-  Download,
   FileAudio2,
   FolderOpen,
   MessageSquareText,
-  MonitorPlay,
   PencilLine,
   PlayCircle,
   Plus,
@@ -32,7 +30,7 @@ import {
   type EditorElement,
   type VideoStyle,
 } from "@/lib/editor-types";
-import type { AppStatus, VideoQualityReport } from "@/lib/types";
+import type { AppStatus } from "@/lib/types";
 import type { RunPaths } from "@/lib/paths";
 
 type ValidationResult = {
@@ -172,7 +170,6 @@ export default function HomePage() {
   const [draftProjectName, setDraftProjectName] = useState("");
   const [voiceoverText, setVoiceoverText] = useState(defaultVoiceover);
   const [toastMessage, setToastMessage] = useState("");
-  const [qualityReport, setQualityReport] = useState<VideoQualityReport | null>(null);
 
   const busy = useMemo(
     () => ["checking-material-pack", "generating-audio", "uploading-audio", "validating-timeline", "generating-scenes", "rendering"].includes(status),
@@ -214,7 +211,6 @@ export default function HomePage() {
     setSubtitleTimelinePath("");
     setVideoPath("");
     setGeneratedDuration(null);
-    setQualityReport(null);
   };
 
   const updateVoiceoverText = (nextText: string) => {
@@ -255,7 +251,6 @@ export default function HomePage() {
     setError("");
     setVideoPath("");
     setGeneratedDuration(null);
-    setQualityReport(null);
 
     try {
       const activeRunPaths = runPaths;
@@ -295,7 +290,7 @@ export default function HomePage() {
       });
 
       setStatus("rendering");
-      const render = await postJson<{ videoPath: string; qualityReport: VideoQualityReport }>("/api/render-preview", {
+      const render = await postJson<{ videoPath: string }>("/api/export-video", {
         materialPackPath: checkedMaterialPackPath || undefined,
         audioPath: currentAudioPath,
         voiceoverPath: currentVoiceoverPath,
@@ -306,16 +301,12 @@ export default function HomePage() {
         scenesPath: activeRunPaths.scenesPath,
         directorPlanPath: activeRunPaths.directorPlanPath,
         styleProfilePath: activeRunPaths.styleProfilePath,
-        productionGateReportPath: activeRunPaths.productionGateReportPath,
-        qualityReportPath: activeRunPaths.qualityReportPath,
-        qualityFramesDir: activeRunPaths.qualityFramesDir,
-        previewPath: activeRunPaths.previewPath,
+        finalPath: activeRunPaths.finalPath,
         publicRuntimeDir: activeRunPaths.publicRuntimeDir,
         publicRuntimeBase: activeRunPaths.publicRuntimeBase,
       });
 
       setVideoPath(render.videoPath);
-      setQualityReport(render.qualityReport);
       setStatus("complete");
       goStep(4);
     } catch (caught) {
@@ -421,39 +412,6 @@ export default function HomePage() {
     }
   };
 
-  const exportVideo = async () => {
-    if (!runPaths || !audioPath || !voiceoverPath || !subtitleTimelinePath) return;
-    setStatus("rendering");
-    setError("");
-
-    try {
-      const result = await postJson<{ videoPath: string; qualityReport: VideoQualityReport }>("/api/export-video", {
-        materialPackPath: checkedMaterialPackPath || undefined,
-        audioPath,
-        voiceoverPath,
-        subtitleTimelinePath,
-        videoBriefPath: runPaths.videoBriefPath,
-        visualManifestPath: runPaths.visualManifestPath,
-        assetManifestPath: runPaths.assetManifestPath,
-        scenesPath: runPaths.scenesPath,
-        directorPlanPath: runPaths.directorPlanPath,
-        styleProfilePath: runPaths.styleProfilePath,
-        productionGateReportPath: runPaths.productionGateReportPath,
-        qualityReportPath: runPaths.qualityReportPath,
-        qualityFramesDir: runPaths.qualityFramesDir,
-        finalPath: runPaths.finalPath,
-        publicRuntimeDir: runPaths.publicRuntimeDir,
-        publicRuntimeBase: runPaths.publicRuntimeBase,
-      });
-      setVideoPath(result.videoPath);
-      setQualityReport(result.qualityReport);
-      setStatus("complete");
-      showToast("已导出 MP4");
-    } catch (caught) {
-      fail(caught instanceof Error ? caught.message : "导出 MP4 失败");
-    }
-  };
-
   const openFolder = async () => {
     if (!runPaths) return;
     await postJson("/api/open-folder", { folderPath: runPaths.finalDir });
@@ -517,7 +475,6 @@ export default function HomePage() {
     setSelectedElementId(editorSeedElements[0]?.id ?? null);
     setCurrentTime(0);
     setGeneratedDuration(null);
-    setQualityReport(null);
     setVoiceoverText("");
     setChatMessages([{ role: "ai", text: "新项目已创建。把文章、链接或主题发给我，我来生成口播稿。" }]);
     setShowNewProjectDialog(false);
@@ -915,7 +872,7 @@ export default function HomePage() {
               {wizardStep === 3 ? (
                 <WizardPanel
                   title="选择视频风格和比例"
-                  subtitle="先选 Remotion 风格库和画面比例，再生成预览。"
+                  subtitle="先选 Remotion 风格库和画面比例，再直接生成最终 MP4。"
                   action={
                     <button
                       type="button"
@@ -923,8 +880,8 @@ export default function HomePage() {
                       disabled={!audioPackageReady || !runPaths || busy}
                       className="inline-flex h-12 items-center gap-2 rounded-[16px] bg-[linear-gradient(135deg,#2563eb,#0ea5a6)] px-5 text-sm font-black text-white shadow-lg shadow-blue-500/20 disabled:opacity-45"
                     >
-                      <MonitorPlay size={17} />
-                      生成视频预览
+                      <PlayCircle size={17} />
+                      生成最终 MP4
                     </button>
                   }
                   footer={
@@ -938,7 +895,7 @@ export default function HomePage() {
                         disabled={!videoPath}
                         className="h-12 rounded-[16px] bg-slate-950 px-7 text-sm font-black text-white disabled:bg-slate-200 disabled:text-slate-400"
                       >
-                        进入视频编辑器
+                        查看成片
                       </button>
                     </>
                   }
@@ -993,7 +950,7 @@ export default function HomePage() {
                         disabled={!audioPackageReady || !runPaths || busy}
                         className="mt-4 h-12 w-full rounded-[16px] bg-slate-950 text-sm font-black text-white disabled:bg-slate-200 disabled:text-slate-400"
                       >
-                        生成视频预览
+                        生成最终 MP4
                       </button>
                     </aside>
                   </div>
@@ -1001,33 +958,8 @@ export default function HomePage() {
               ) : null}
 
               {wizardStep === 4 ? (
-                <WizardPanel title="视频预览与质量检查" subtitle="自动检查问题镜头和实际成片，确认通过后直接导出 MP4。">
-                  <div className="grid h-full min-h-0 grid-cols-1 xl:grid-cols-[250px_minmax(0,1fr)_300px]">
-                    <aside className="overflow-auto border-b border-slate-200 bg-slate-50/70 p-4 xl:border-b-0 xl:border-r">
-                      <p className="mb-3 text-sm font-black text-slate-500">质量问题</p>
-                      {qualityReport ? (
-                        <>
-                          <div className={`mb-4 rounded-[14px] border p-3 ${qualityReport.passed ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}>
-                            <p className="text-sm font-black">{qualityReport.passed ? "自动检查通过" : `${qualityReport.issues.length} 个问题待处理`}</p>
-                            <p className="mt-1 text-xs">{qualityReport.render ? `${qualityReport.render.width}x${qualityReport.render.height} · ${qualityReport.render.durationSeconds.toFixed(1)} 秒` : "渲染前检查未通过"}</p>
-                          </div>
-                          {qualityReport.issues.map((issue) => (
-                            <button
-                              key={`${issue.code}-${issue.sceneId ?? "video"}`}
-                              type="button"
-                              onClick={() => showToast(issue.sceneId ? `定位：${issue.sceneId}` : "这是整条视频的问题")}
-                              className="mb-2 w-full rounded-[14px] border border-slate-200 bg-white p-3 text-left"
-                            >
-                              <span className="block text-xs font-black text-slate-900">{issue.sceneId ?? "整条视频"}</span>
-                              <span className="mt-1 block text-xs leading-5 text-slate-600">{issue.message}</span>
-                            </button>
-                          ))}
-                        </>
-                      ) : (
-                        <p className="rounded-[14px] border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-500">生成预览后，这里会显示具体问题镜头和修复建议。</p>
-                      )}
-                    </aside>
-
+                <WizardPanel title="成片" subtitle="视频已导出，可以直接播放或打开项目文件夹查看。">
+                  <div className="grid h-full min-h-0 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px]">
                     <section className="grid min-h-[640px] grid-rows-[1fr_82px] gap-4 bg-slate-100 p-4">
                       <div className="grid min-h-0 place-items-center">
                         {videoPath ? (
@@ -1058,18 +990,10 @@ export default function HomePage() {
 
                     <aside className="overflow-auto border-t border-slate-200 bg-slate-50/70 xl:border-l xl:border-t-0">
                       <div className="p-4">
-                        <p className="text-sm font-black text-slate-700">代表帧</p>
-                        <div className="mt-3 grid gap-2">
-                          {qualityReport?.render?.framePaths.map((framePath, index) => (
-                            <img
-                              key={framePath}
-                              src={`/api/video?path=${encodeURIComponent(framePath)}`}
-                              alt={`代表帧 ${index + 1}`}
-                              className="aspect-video w-full rounded-[10px] border border-slate-200 bg-slate-950 object-cover"
-                            />
-                          ))}
-                          {!qualityReport?.render?.framePaths.length ? <p className="text-xs leading-5 text-slate-500">预览完成后自动抽取开头、中段和结尾画面。</p> : null}
-                        </div>
+                        <p className="text-sm font-black text-slate-700">成片检查</p>
+                        <p className="mt-3 text-xs leading-5 text-slate-500">
+                          已验证文件有效性、时长、分辨率，并抽检开头、重点和结尾画面。检查素材会在成功交付后自动清理。
+                        </p>
                       </div>
                       <div className="space-y-2 border-t border-slate-200 p-4">
                         <button type="button" onClick={() => goStep(3)} className="h-11 w-full rounded-[14px] bg-slate-100 text-sm font-bold text-slate-700">
@@ -1081,15 +1005,7 @@ export default function HomePage() {
                           disabled={!audioPackageReady || !runPaths || busy}
                           className="h-11 w-full rounded-[14px] bg-[linear-gradient(135deg,#2563eb,#0ea5a6)] text-sm font-black text-white disabled:opacity-45"
                         >
-                          重新生成预览
-                        </button>
-                        <button
-                          type="button"
-                          onClick={exportVideo}
-                          disabled={status !== "complete" || !qualityReport?.passed || !runPaths || !audioPackageReady || busy}
-                          className="h-12 w-full rounded-[16px] bg-slate-950 text-sm font-black text-white disabled:bg-slate-200 disabled:text-slate-400"
-                        >
-                          导出 MP4
+                          重新生成最终 MP4
                         </button>
                         <button
                           type="button"

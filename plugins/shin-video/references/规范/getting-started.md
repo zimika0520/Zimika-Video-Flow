@@ -1,6 +1,6 @@
 # Shin-video 新手使用指南
 
-这份指南面向第一次使用 Shin-video 的用户。唯一推荐的公开入口是 `shin-video-director`；`shin-video-lite` 只保留给已有调用方的兼容路由。插件共包含 16 个 Skill。你只需要准备文章、配置一个支持原生时间戳的 TTS 服务商，并准备本地 Remotion 渲染环境。
+这份指南面向第一次使用 Shin-video 的用户。唯一公开入口是 `shin-video`。你只需要准备文章、配置一个支持原生时间戳的 TTS 服务商，并准备本地 Remotion 渲染环境；无需安装或调用额外阶段 Skill。
 
 ## 一、工作流会做什么
 
@@ -13,8 +13,8 @@
 → 生成字幕时间轴和视频场景
 → 搜集并绑定证据素材
 → 生成导演方案和视觉系统
-→ 生产门槛检查
-→ Remotion 渲染视频
+→ Remotion 渲染器内部 Production Gate
+→ 直接生成最终视频
 ```
 
 字幕有两条固定规则：
@@ -28,7 +28,7 @@
 
 ## 二、准备本地环境
 
-进入 Shin-video 项目目录后检查：
+首次安装、引擎更新或环境故障排查时，进入 Shin-video 项目目录后检查：
 
 ```bash
 node -v
@@ -55,7 +55,7 @@ remotion/visual-library 视觉组件库
 生产门槛和输出目录
 ```
 
-检查失败时不要继续渲染。交付前需要完整验证时执行：
+检查失败时先完成环境修复。日常制作不运行这些工程检查。只有安装、更新、发布、故障排查或用户明确要求完整工程自检时执行：
 
 ```bash
 npm run verify-workflow
@@ -128,9 +128,7 @@ TTS服务商与Remotion部署说明.md
 │       ├── asset-manifest.json
 │       ├── visual-manifest.json
 │       ├── director-plan.json
-│       ├── style-profile.json
-│       ├── production-gate-report.json
-│       └── preview.mp4
+│       └── style-profile.json
 └── <视频标题>.mp4
 ```
 
@@ -148,7 +146,7 @@ source 为 provider-native
 
 ## 五、开始制作
 
-通过 `$shin-video-director` 提交文章、链接或本地正文开始制作。插件不定义单独的安装、网页或命令行入口；运行引擎的可用命令以 `SHIN_VIDEO_ENGINE_ROOT` 指向目录中的 `package.json` 为准。
+通过 `$shin-video` 提交文章、链接或本地正文开始制作。插件不定义单独的安装、网页或命令行入口；运行引擎的可用命令以 `SHIN_VIDEO_ENGINE_ROOT` 指向目录中的 `package.json` 为准。
 
 ## 六、制作过程
 
@@ -186,17 +184,13 @@ RUN_DIR/style-profile.json
 
 ### 5. 渲染和验收
 
-生产门槛通过后生成：
-
-```text
-RUN_DIR/preview.mp4
-```
-
-确认字幕、声音、画面、素材和安全区后，再导出：
+渲染器内部 Production Gate 通过后，直接生成：
 
 ```text
 <项目目录>/<视频标题>.mp4
 ```
+
+成片交付前只检查视频是否可播放、是否有声音、时长是否接近最终音频、尺寸是否正确。预览仅在你明确要求审片时生成。成功交付后，临时质检帧、报告、缓存和可选预览会自动清理。
 
 ## 七、常见问题
 

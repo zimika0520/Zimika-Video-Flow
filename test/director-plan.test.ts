@@ -60,6 +60,13 @@ describe("runtime director plans", () => {
       sourceSkill: "bayramannakov/remotion-video-director",
       adaptedPhases: ["Think", "Design", "Build", "Review"],
       sceneFocusRule: "one-scene-one-idea",
+      expertReviewProtocol: [
+        "director",
+        "information-design",
+        "motion-design",
+        "caption-safety",
+        "audience-comprehension",
+      ],
     });
     expect(plan.remotionExecutionContract).toMatchObject({
       rendererRole: "execute-director-plan",
@@ -75,7 +82,7 @@ describe("runtime director plans", () => {
         "RUN_DIR/subtitle-timeline.json",
         "口播音频.mp3",
       ],
-      requiredOutputs: ["RUN_DIR/preview.mp4", "<项目目录>/<视频标题>.mp4"],
+      requiredOutputs: ["<项目目录>/<视频标题>.mp4"],
     });
     expect(plan.scenes[0]).toMatchObject({
       id: "scene-1",

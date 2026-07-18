@@ -383,7 +383,13 @@ export type VideoDirectorWorkflow = {
     upstream: Array<"Product Launch" | "Recurring Data Report" | "Narrative Intro" | "Technical Demo" | "Growth Marketing">;
     shinVideo: VideoArchetype[];
   };
-  expertReviewProtocol: Array<"director" | "information-design" | "motion-design" | "caption-safety" | "audience-comprehension">;
+  expertReviewProtocol: Array<
+    | "director"
+    | "information-design"
+    | "motion-design"
+    | "caption-safety"
+    | "audience-comprehension"
+  >;
 };
 
 export type RemotionExecutionContract = {
@@ -400,7 +406,7 @@ export type RemotionExecutionContract = {
     | "RUN_DIR/subtitle-timeline.json"
     | "口播音频.mp3"
   >;
-  requiredOutputs: Array<"RUN_DIR/preview.mp4" | "<项目目录>/<视频标题>.mp4">;
+  requiredOutputs: Array<"<项目目录>/<视频标题>.mp4">;
   remotionRules: Array<
     | "frame-driven-animation"
     | "clamped-interpolation"
@@ -469,8 +475,6 @@ export type RuntimeVideoBrief = {
     requireFinalAudioTiming: true;
     requireDirectorPlan: true;
     requireStyleProfile: true;
-    minimumVisualRecipes: number;
-    minimumDirectorTypes: number;
   };
   requiredOutputs: string[];
 };
@@ -494,7 +498,6 @@ export type VisualManifestScene = {
     mainVisualAvoidsSubtitle: boolean;
   };
   overlapRisks: string[];
-  forbiddenReuse: string[];
   whyThisVisual: string;
 };
 
@@ -645,15 +648,8 @@ export type RenderQualitySummary = {
   width: number;
   height: number;
   sizeBytes: number;
-  framePaths: string[];
-  blackSegments: Array<{ start: number; end: number; duration: number }>;
-  sceneFrames?: Array<{ sceneId: string; framePath: string }>;
-  frameSimilarities?: Array<{
-    leftSceneId: string;
-    rightSceneId: string;
-    similarity: number;
-    adjacent: boolean;
-  }>;
+  hasAudioStream: boolean;
+  sampledFrameCount: number;
   primaryVisualUsage?: Array<{
     sceneId: string;
     assetId: string;
@@ -943,13 +939,6 @@ export type RuntimeStyleProfile = {
     dataAnimations: DataAnimation[];
     cameraMotions: CameraMotion[];
     backgroundTypes: BackgroundType[];
-  };
-  antiRepetitionRules?: {
-    maxSameSceneTypeInRow: number;
-    maxSameMotionVariantInRow: number;
-    minShotStylesPerVideo?: number;
-    requireMemoryFrame?: boolean;
-    minSceneTypesPerVideo: number;
   };
   sectionPacing?: {
     opening: ScenePace;

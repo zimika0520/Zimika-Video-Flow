@@ -12,8 +12,8 @@
 → 口播音频.mp3
 → RUN_DIR/subtitle-timeline.json
 → 场景、素材和导演方案
-→ Remotion 渲染 RUN_DIR/preview.mp4
-→ <项目目录>/<视频标题>.mp4
+→ Remotion 渲染器内部 Production Gate
+→ Remotion 直接生成 <项目目录>/<视频标题>.mp4
 ```
 
 必须具备：
@@ -160,7 +160,7 @@ npx remotion --version
 npm run doctor
 ```
 
-建议的项目命令：
+日常制作直接通过 `$shin-video` 生成最终 MP4。以下命令仅用于开发、排查或用户明确要求审片：
 
 ```bash
 npm run remotion:studio
@@ -171,7 +171,6 @@ npm run render:final
 输出约定：
 
 ```text
-RUN_DIR/preview.mp4
 <项目目录>/<视频标题>.mp4
 ```
 
@@ -215,14 +214,13 @@ remotion/visual-library
 │       ├── visual-manifest.json
 │       ├── director-plan.json
 │       ├── style-profile.json
-│       ├── production-gate-report.json
-│       └── preview.mp4
+│       └── style-profile.json
 └── <视频标题>.mp4
 ```
 
-## 九、完整自检
+## 九、首次部署与故障排查
 
-TTS 自检：
+首次部署、引擎更新或 TTS 接入变更时：
 
 ```text
 1. 使用一小段确认后的口播文案发起请求。
@@ -233,24 +231,19 @@ TTS 自检：
 6. 验证时间段有序且覆盖有效音频。
 ```
 
-Remotion 自检：
+Remotion 环境检查：
 
 ```bash
 npm install
 npm run doctor
-npm run render:preview
 ```
 
-通过标准：
+日常制作不重复运行 `npm run doctor`、测试、构建、工作流验证或预览渲染。每条视频只保留：
 
 ```text
-RUN_DIR/preview.mp4 存在
-视频可播放
-有声音
-没有黑屏
-时长接近最终音频
-字幕正文来自口播文案
-字幕时间来自 provider-native 时间轴
+一次最终音频/时间轴校验
+渲染器内部 Production Gate
+最终视频的可播放性、声音、时长与尺寸检查
 ```
 
 ## 十、失败提示
@@ -276,7 +269,7 @@ RUN_DIR/preview.mp4 存在
 缺少 Remotion：
 
 ```text
-当前项目还没有完整的本地渲染环境。请安装依赖并运行 npm run doctor。
+当前项目还没有完整的本地渲染环境。请安装依赖；首次部署、引擎更新或排查时再运行 npm run doctor。
 ```
 
 ## 十一、硬性原则

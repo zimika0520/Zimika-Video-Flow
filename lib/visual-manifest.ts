@@ -39,7 +39,6 @@ export const buildVisualManifestFromScenes = (scenes: Scene[]): RuntimeVisualMan
         mainVisualAvoidsSubtitle: true,
       },
       overlapRisks: ["底部字幕区", "大标题与数据卡", "素材裁切边缘"],
-      forbiddenReuse: ["复用上一条视频背景", "整屏复读字幕", "连续使用同一图标/K线模板"],
       whyThisVisual: scene.visualIntent
         ? `当前 visualIntent 为 ${scene.visualIntent}，应服务于画面解释而不是字幕复写。`
         : "根据本 scene 的导演类型和口播主张选择可视化方式。",

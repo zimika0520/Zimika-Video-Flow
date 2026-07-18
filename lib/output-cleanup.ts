@@ -17,6 +17,10 @@ export const cleanupRenderArtifacts = async ({
   const targets = [
     materialPackPath ? path.join(materialPackPath, "自检帧") : undefined,
     runDir ? path.join(runDir, "自检帧") : undefined,
+    runDir ? path.join(runDir, "quality-frames") : undefined,
+    runDir ? path.join(runDir, "quality-report.json") : undefined,
+    runDir ? path.join(runDir, "production-gate-report.json") : undefined,
+    runDir ? path.join(runDir, "preview.mp4") : undefined,
     publicRuntimeDir,
   ].filter((target): target is string => Boolean(target));
 
