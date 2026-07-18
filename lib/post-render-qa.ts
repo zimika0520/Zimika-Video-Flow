@@ -1,11 +1,8 @@
 import { execFile as execFileCallback } from "node:child_process";
-import { mkdtemp, rm, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
+import { stat } from "node:fs/promises";
 import { promisify } from "node:util";
 import type {
   QualityIssue,
-  Scene,
   VideoQualityReport,
 } from "./types";
 
@@ -19,10 +16,10 @@ export type VideoProbe = {
   hasAudioStream: boolean;
 };
 
-export type QualitySampleCapture = {
-  label: "opening" | "peak" | "ending";
-  timestampSeconds: number;
-  framePath: string;
+export type BlackSegment = {
+  start: number;
+  end: number;
+  duration: number;
 };
 
 export type EvaluatePostRenderQaInput = {
@@ -31,7 +28,7 @@ export type EvaluatePostRenderQaInput = {
   expectedWidth: number;
   expectedHeight: number;
   probe: VideoProbe;
-  sampledFrameCount: number;
+  blackSegments: BlackSegment[];
 };
 
 const postRenderIssue = (
@@ -55,7 +52,7 @@ export const evaluatePostRenderQa = ({
   expectedWidth,
   expectedHeight,
   probe,
-  sampledFrameCount,
+  blackSegments,
 }: EvaluatePostRenderQaInput): VideoQualityReport => {
   const issues: QualityIssue[] = [];
   if (probe.sizeBytes <= 0 || probe.durationSeconds <= 0) {
@@ -82,8 +79,11 @@ export const evaluatePostRenderQa = ({
   if (!probe.hasAudioStream) {
     issues.push(postRenderIssue("render.audio-missing", "成片缺少可播放的音频轨道", "rerender"));
   }
-  if (sampledFrameCount < 3) {
-    issues.push(postRenderIssue("render.samples-missing", "未能解码开头、重点和结尾的成片抽检帧", "rerender"));
+  const longBlackSegmentCount = blackSegments.filter(
+    (segment) => segment.duration >= 1.5,
+  ).length;
+  if (longBlackSegmentCount > 0) {
+    issues.push(postRenderIssue("render.long-black-frame", "成片包含持续 1.5 秒以上的明显黑帧", "review-frame"));
   }
 
   const warnings = issues
@@ -104,7 +104,7 @@ export const evaluatePostRenderQa = ({
       height: probe.height,
       sizeBytes: probe.sizeBytes,
       hasAudioStream: probe.hasAudioStream,
-      sampledFrameCount,
+      longBlackSegmentCount,
     },
   };
 };
@@ -136,63 +136,32 @@ const probeVideo = async (videoPath: string): Promise<VideoProbe> => {
   };
 };
 
-const clampTimestamp = (
-  timestampSeconds: number,
-  durationSeconds: number,
-): number => Math.max(0, Math.min(timestampSeconds, Math.max(0, durationSeconds - 0.05)));
+const parseBlackSegments = (stderr: string): BlackSegment[] =>
+  [...stderr.matchAll(/black_start:([\d.]+)\s+black_end:([\d.]+)\s+black_duration:([\d.]+)/g)].map(
+    (match) => ({
+      start: Number(match[1]),
+      end: Number(match[2]),
+      duration: Number(match[3]),
+    }),
+  );
 
-export const planQualitySampleCaptures = (
-  scenes: Scene[],
-  durationSeconds: number,
-  frameDir: string,
-): QualitySampleCapture[] => {
-  const peakScene = scenes.reduce<Scene | undefined>((selected, scene) => {
-    if (!selected || (scene.importance ?? 0) > (selected.importance ?? 0)) return scene;
-    return selected;
-  }, undefined);
-  const peakTimestamp = peakScene
-    ? peakScene.start + (peakScene.end - peakScene.start) / 2
-    : durationSeconds * 0.5;
-
-  return [
-    {
-      label: "opening",
-      timestampSeconds: clampTimestamp(durationSeconds * 0.08, durationSeconds),
-      framePath: path.join(frameDir, "opening.jpg"),
-    },
-    {
-      label: "peak",
-      timestampSeconds: clampTimestamp(peakTimestamp, durationSeconds),
-      framePath: path.join(frameDir, "peak.jpg"),
-    },
-    {
-      label: "ending",
-      timestampSeconds: clampTimestamp(durationSeconds * 0.9, durationSeconds),
-      framePath: path.join(frameDir, "ending.jpg"),
-    },
-  ];
-};
-
-const extractQualitySampleFrames = async (
-  videoPath: string,
-  captures: QualitySampleCapture[],
-): Promise<number> => {
-  if (captures.length === 0) return 0;
-  for (const capture of captures) {
-    await execFile("ffmpeg", [
-      "-y",
-      "-ss",
-      capture.timestampSeconds.toFixed(3),
+const detectBlackSegments = async (videoPath: string): Promise<BlackSegment[]> => {
+  try {
+    const { stderr } = await execFile("ffmpeg", [
+      "-hide_banner",
       "-i",
       videoPath,
-      "-frames:v",
-      "1",
-      "-q:v",
-      "2",
-      capture.framePath,
+      "-vf",
+      "blackdetect=d=0.5:pix_th=0.10",
+      "-an",
+      "-f",
+      "null",
+      "-",
     ]);
+    return parseBlackSegments(stderr);
+  } catch (error) {
+    return parseBlackSegments(String((error as { stderr?: string }).stderr ?? ""));
   }
-  return captures.length;
 };
 
 export const runPostRenderQa = async (input: {
@@ -200,23 +169,12 @@ export const runPostRenderQa = async (input: {
   expectedDurationSeconds: number;
   expectedWidth: number;
   expectedHeight: number;
-  scenes?: Scene[];
 }): Promise<VideoQualityReport> => {
   const probe = await probeVideo(input.videoPath);
-  const frameDir = await mkdtemp(path.join(tmpdir(), "shin-video-qa-"));
-  try {
-    const captures = planQualitySampleCaptures(
-      input.scenes ?? [],
-      probe.durationSeconds,
-      frameDir,
-    );
-    const sampledFrameCount = await extractQualitySampleFrames(input.videoPath, captures);
-    return evaluatePostRenderQa({
-      ...input,
-      probe,
-      sampledFrameCount,
-    });
-  } finally {
-    await rm(frameDir, { recursive: true, force: true });
-  }
+  const blackSegments = await detectBlackSegments(input.videoPath);
+  return evaluatePostRenderQa({
+    ...input,
+    probe,
+    blackSegments,
+  });
 };

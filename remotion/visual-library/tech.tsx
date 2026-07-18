@@ -19,6 +19,7 @@ export const ChipArchitecture = ({
 }) => {
   const frame = useCurrentFrame();
   const { palette, fontFamily, radius, shadow } = resolveTheme(theme);
+  const traceProgress = interpolate(frame, [4, 46], [0, 1], clamp);
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", fontFamily, ...style }}>
       <div
@@ -64,7 +65,7 @@ export const ChipArchitecture = ({
       </div>
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
         {[22, 36, 64, 78].map((x, index) => (
-          <path key={x} d={`M ${x} 18 C ${x + (index % 2 ? -8 : 8)} 35, ${x + (index % 2 ? 8 : -8)} 65, ${x} 82`} fill="none" stroke={palette.secondary} strokeWidth={0.45} opacity={0.35} strokeDasharray="2 2" strokeDashoffset={-(frame % 40) / 8} />
+          <path key={x} d={`M ${x} 18 C ${x + (index % 2 ? -8 : 8)} 35, ${x + (index % 2 ? 8 : -8)} 65, ${x} 82`} fill="none" stroke={palette.secondary} strokeWidth={0.45} opacity={0.35} strokeDasharray="2 2" strokeDashoffset={5 * (1 - traceProgress)} />
         ))}
       </svg>
     </div>

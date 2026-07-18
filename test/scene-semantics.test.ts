@@ -50,6 +50,50 @@ const buildBoundExcerptContext = (scene: Scene, claim: string) => {
 };
 
 describe("extractSceneSemantics", () => {
+  test("extracts technical units used by visual explainers", () => {
+    const semantics = extractSceneSemantics({
+      id: "scene-technical-units",
+      start: 0,
+      end: 5,
+      subtitle: "显存是 24GB，延迟降到 18ms，算力达到 120TOPS，月亮角直径约 0.5°。",
+      images: [],
+      layout: "quote",
+    });
+
+    expect(semantics.metrics.map((item) => item.value)).toEqual([
+      "24GB",
+      "18ms",
+      "120TOPS",
+      "0.5°",
+    ]);
+  });
+
+  test("extracts a shared-outcome relation map from natural Chinese", () => {
+    const semantics = extractSceneSemantics({
+      id: "scene-shared-outcome",
+      start: 0,
+      end: 5,
+      subtitle: "焦距、构图和参照物，共同决定照片里的月亮有多大。",
+      images: [],
+      layout: "quote",
+    });
+
+    expect(semantics.relations).toEqual([
+      expect.objectContaining({
+        from: "焦距",
+        to: "照片里的月亮有多大",
+      }),
+      expect.objectContaining({
+        from: "构图",
+        to: "照片里的月亮有多大",
+      }),
+      expect.objectContaining({
+        from: "参照物",
+        to: "照片里的月亮有多大",
+      }),
+    ]);
+  });
+
   test("returns source-backed empty collections for an abstract statement", () => {
     const semantics = extractSceneSemantics({
       id: "scene-1",

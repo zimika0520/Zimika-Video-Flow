@@ -93,6 +93,17 @@ const withRelations = (
 });
 
 describe("buildDirectorContent", () => {
+  test("uses explanatory display copy instead of repeating the narration sentence", () => {
+    const subtitle = "月亮没变小，是手机的广角镜头把整片天空一起装进了画面。";
+    const content = build(subtitle, "Hero");
+
+    expect(content.headline).toBeTruthy();
+    expect(content.headline).not.toBe(
+      subtitle.replace(/[。！？!?]$/, ""),
+    );
+    expect(content.headline).not.toContain("整片天空一起装进了画面");
+  });
+
   test("builds explicit system layers without decorative labels", () => {
     const content = build(
       "请求经过模型、API、推理服务，最后进入芯片执行。",

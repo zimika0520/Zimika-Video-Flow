@@ -5,6 +5,7 @@ export * from "./director";
 export * from "./finance";
 export * from "./motion";
 export * from "./narrative";
+export * from "./optics";
 export * from "./relation";
 export * from "./safety";
 export * from "./tech";

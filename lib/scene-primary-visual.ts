@@ -20,19 +20,19 @@ export const resolveScenePrimaryVisual = (
   scene: Scene,
   manifest?: RuntimeAssetManifest,
 ): ScenePrimaryVisual | undefined => {
-  const generatedConcept = resolveRenderableGeneratedConceptVisual(scene, manifest);
-  if (generatedConcept) {
+  const ordinary = resolveRenderablePrimaryVisual(scene, manifest);
+  if (ordinary) {
     return {
-      ...generatedConcept,
-      sourceKind: "generated-concept",
+      ...ordinary,
+      sourceKind: "ordinary",
     };
   }
 
-  const ordinary = resolveRenderablePrimaryVisual(scene, manifest);
-  return ordinary
+  const generatedConcept = resolveRenderableGeneratedConceptVisual(scene, manifest);
+  return generatedConcept
     ? {
-        ...ordinary,
-        sourceKind: "ordinary",
+        ...generatedConcept,
+        sourceKind: "generated-concept",
       }
     : undefined;
 };

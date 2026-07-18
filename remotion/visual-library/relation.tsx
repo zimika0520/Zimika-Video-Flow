@@ -1,3 +1,4 @@
+import React from "react";
 import { interpolate, useCurrentFrame } from "remotion";
 import type { GraphEdgeItem, GraphNodeItem, TimedVisualProps } from "./types";
 import { resolveTheme, toneColor } from "./types";
@@ -51,6 +52,41 @@ export const NodeGraph = ({
           );
         })}
       </svg>
+      {edges.map((edge, index) => {
+        if (!edge.label) return null;
+        const from = positions.get(edge.from);
+        const to = positions.get(edge.to);
+        if (!from || !to) return null;
+        const progress = interpolate(frame, [index * 4 + 10, index * 4 + 24], [0, 1], clamp);
+        const x = (from.x + to.x) / 2;
+        const y = (from.y + to.y) / 2;
+        return (
+          <div
+            key={`${edge.from}-${edge.to}-label-${index}`}
+            data-edge-label={edge.label}
+            style={{
+              position: "absolute",
+              left: `${x}%`,
+              top: `${y}%`,
+              transform: `translate(-50%, -50%) scale(${0.94 + progress * 0.06})`,
+              opacity: progress,
+              maxWidth: 170,
+              padding: "6px 10px",
+              borderRadius: radius * 0.32,
+              background: palette.bg,
+              border: `1px solid ${palette.line}`,
+              color: palette.muted,
+              fontSize: 14,
+              fontWeight: 780,
+              lineHeight: 1.15,
+              textAlign: "center",
+              zIndex: 1,
+            }}
+          >
+            {edge.label}
+          </div>
+        );
+      })}
       {nodes.map((node, index) => {
         const pos = positions.get(node.id) ?? { x: 50, y: 50 };
         const progress = interpolate(frame, [index * 4, index * 4 + 18], [0, 1], clamp);

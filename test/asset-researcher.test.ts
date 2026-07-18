@@ -1,7 +1,7 @@
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { bindAssetsToScenes, extractAssetQueries, researchAssets } from "@/lib/asset-researcher";
 import type { RuntimeVideoBrief, RuntimeVisualManifest, Scene } from "@/lib/types";
 
@@ -14,6 +14,7 @@ const makeTempDir = async () => {
 };
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
 });
 
@@ -121,6 +122,7 @@ describe("asset researcher", () => {
   test("creates a dry-run asset manifest and binds assets to scenes", async () => {
     const dir = await makeTempDir();
     const manifestPath = path.join(dir, "asset-manifest.json");
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
 
     const manifest = await researchAssets({
       title: "DeepSeek 自主造芯片",
@@ -133,6 +135,7 @@ describe("asset researcher", () => {
       dryRun: true,
     });
 
+    expect(fetchSpy).not.toHaveBeenCalled();
     expect(manifest.assetManifestVersion).toBe(1);
     expect(manifest.sourceMode).toBe("dry-run");
     expect(manifest.evidenceRecords?.some((record) => record.kind === "source-text")).toBe(true);

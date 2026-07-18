@@ -15,6 +15,10 @@ import type { CSSProperties, ReactNode } from "react";
 import {
   type CaptionLine,
   defaultStyleProfile,
+  type DirectorCompositionLayout,
+  type DirectorCompositionMotion,
+  type DirectorCompositionProfile,
+  type DirectorCompositionTitlePlacement,
   type DirectorSceneType,
   type RenderInput,
   type RuntimeAssetManifest,
@@ -23,6 +27,8 @@ import {
   type SceneType,
   type TransitionAnimation,
 } from "../lib/types";
+import { resolveDirectorCompositionProfile } from "../lib/director-composition";
+import { resolveSceneStageInset } from "../lib/video-layout";
 import { type RenderableGeneratedConceptVisual } from "../lib/generated-concept-visual";
 import {
   factualCandlesFromScene,
@@ -45,6 +51,7 @@ import {
 } from "./motion/transforms";
 import { seededRange } from "./motion/random";
 import { clampText, fitChineseText } from "./motion/text-fit";
+import { buildSceneGraph } from "./visual-library/scene-graph";
 import {
   BarRaceChart,
   ChapterBreak,
@@ -61,14 +68,22 @@ import {
   LineTrendChart,
   MarketHeatmap,
   MetricCounter,
+  MoonCompositionFrame,
+  MoonPerceptionFrame,
   NodeGraph,
   ProductEcosystemMap,
   QuoteFocus,
+  ReferenceScaleFrame,
   RiskMeter,
   SupplyChainMap,
   TechQuadrantWall,
   TimelineRail,
   TrainingInferenceSplit,
+  AngularDiameterFrame,
+  AttentionFieldFrame,
+  DistanceMythFrame,
+  FieldOfViewFrame,
+  ZoomCropFrame,
   type CandlePoint,
   type ChartPoint,
   type GraphEdgeItem,
@@ -411,7 +426,6 @@ const ExplanationStack = ({ lines, theme, delay = 18 }: { lines: string[]; theme
               fontWeight: 840,
             }}
           >
-            <span style={{ color: getAccent(index, theme), fontWeight: 980, marginRight: 12 }}>0{index + 1}</span>
             {line}
           </div>
         );
@@ -810,13 +824,21 @@ const GlobalCaptionLayer = ({ scenes, captions, theme }: { scenes: Scene[]; capt
   const currentSeconds = frame / fps;
   const text = getActiveCaption(scenes, currentSeconds, captions).trim();
   const opacity = text ? 1 : 0;
-  const baseWidth = 1920;
-  const baseHeight = 1080;
+  const isPortrait = height > width;
+  const baseWidth = isPortrait ? 1080 : 1920;
+  const baseHeight = isPortrait ? 1920 : 1080;
   const stageScale = Math.min(width / baseWidth, height / baseHeight);
   const stageLeft = (width - baseWidth * stageScale) / 2;
   const stageTop = (height - baseHeight * stageScale) / 2;
-  const boxWidth = 1480;
-  const fontSize = theme.isDark ? fitChineseText(text, 34, 29, 18) : fitChineseText(text, 38, 32, 20);
+  const boxWidth = isPortrait ? 900 : 1480;
+  const captionBottom = isPortrait ? 230 : 166;
+  const fontSize = isPortrait
+    ? theme.isDark
+      ? fitChineseText(text, 43, 36, 24)
+      : fitChineseText(text, 46, 38, 25)
+    : theme.isDark
+      ? fitChineseText(text, 34, 29, 18)
+      : fitChineseText(text, 38, 32, 20);
 
   if (!text) return null;
 
@@ -825,9 +847,9 @@ const GlobalCaptionLayer = ({ scenes, captions, theme }: { scenes: Scene[]; capt
       style={{
         position: "absolute",
         left: stageLeft + (baseWidth * stageScale - boxWidth * stageScale) / 2,
-        top: stageTop + (baseHeight - 166) * stageScale,
+        top: stageTop + (baseHeight - captionBottom) * stageScale,
         width: boxWidth,
-        minHeight: theme.isDark ? 96 : 112,
+        minHeight: isPortrait ? 126 : theme.isDark ? 96 : 112,
         opacity,
         transform: `scale(${stageScale})`,
         transformOrigin: "top left",
@@ -1274,21 +1296,14 @@ const PricingFrame = ({ scene, theme }: { scene: Scene; theme: Theme }) => {
 
 const RelationMapFrame = ({ scene, theme }: { scene: Scene; theme: Theme }) => {
   const frame = useCurrentFrame();
-  const labels = scene.visualBrief?.nodes?.length
-    ? scene.visualBrief.nodes.map((node) => node.label).slice(0, 5)
-    : emphasisItems(scene, ["中心对象", "业务一", "业务二", "业务三"]).slice(0, 4);
+  const fallbackNodes = graphNodesFromScene(scene).slice(0, 6);
+  const graph = buildSceneGraph(scene, fallbackNodes);
+  const labels = graph.nodes.map((node) => node.label).slice(0, 5);
   const relationKeywords = briefTags(scene, labels).slice(0, 4);
   const headline = scene.visualBrief?.headline ?? "关系图谱";
   const kicker = scene.visualBrief?.kicker ?? "关系路径";
   const headlineSize = fitChineseText(headline, 66, 28, 40);
-  const lineProgress = interpolate(frame, [20, 62], [0, 1], { extrapolateRight: "clamp", easing: ease });
   const explanations = explanationLines(scene, ["中心模型", "业务接入", "真实调用验证"], 3);
-  const positions = [
-    { x: 230, y: 330, color: theme.primary },
-    { x: 540, y: 190, color: theme.secondary },
-    { x: 860, y: 330, color: theme.warning },
-    { x: 540, y: 505, color: theme.accent },
-  ];
 
   return (
     <div
@@ -1336,58 +1351,13 @@ const RelationMapFrame = ({ scene, theme }: { scene: Scene; theme: Theme }) => {
         </div>
         <ExplanationStack lines={explanations} theme={theme} delay={28} />
       </div>
-      <div style={{ position: "relative", height: 670, background: theme.isDark ? "rgba(15,23,42,0.64)" : "rgba(255,255,255,0.64)", border: `1px solid ${theme.line}`, borderRadius: theme.radius, overflow: "hidden" }}>
-        <svg width="100%" height="100%" viewBox="0 0 1080 670" style={{ position: "absolute", inset: 0 }}>
-          <path
-            d="M230 330 C380 180 410 170 540 190 C690 210 730 290 860 330"
-            fill="none"
-            stroke={theme.primary}
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray="900"
-            strokeDashoffset={900 - lineProgress * 900}
-            opacity="0.42"
-          />
-          <path
-            d="M230 330 C350 500 420 530 540 505 C690 475 720 370 860 330"
-            fill="none"
-            stroke={theme.secondary}
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray="900"
-            strokeDashoffset={900 - lineProgress * 900}
-            opacity="0.42"
-          />
-        </svg>
-        {positions.map((node, index) => {
-          const local = frame - 8 - index * 8;
-          const s = spring({ frame: local, fps: 30, config: { damping: 16, stiffness: 110 } });
-          return (
-            <div
-              key={labels[index] ?? `node-${index}`}
-              style={{
-                position: "absolute",
-                left: node.x - 92,
-                top: node.y - 68,
-                width: 184,
-                minHeight: 136,
-                opacity: fade(local, 0, 12),
-                transform: `scale(${0.72 + s * 0.28})`,
-                background: theme.panel,
-                border: `2px solid ${node.color}44`,
-                borderRadius: theme.radius,
-                boxShadow: `0 22px 58px ${node.color}24`,
-                display: "grid",
-                placeItems: "center",
-                padding: 18,
-                textAlign: "center",
-              }}
-            >
-              <div style={{ width: 42, height: 42, borderRadius: 999, background: node.color, marginBottom: 10 }} />
-              <div style={{ fontSize: 29, color: theme.ink, fontWeight: theme.titleWeight, lineHeight: 1.08 }}>{labels[index] ?? "节点"}</div>
-            </div>
-          );
-        })}
+      <div style={{ position: "relative", height: 670, background: theme.isDark ? "rgba(15,23,42,0.64)" : "rgba(255,255,255,0.64)", border: `1px solid ${theme.line}`, borderRadius: theme.radius, overflow: "hidden", padding: 22 }}>
+        <NodeGraph
+          nodes={graph.nodes}
+          edges={graph.edges}
+          theme={toVisualTheme(theme)}
+          style={{ height: "100%" }}
+        />
       </div>
     </div>
   );
@@ -1778,9 +1748,6 @@ const OrdinaryPrimaryVisualFrame = ({
         }}
       />
       <div style={{ position: "absolute", left: 72, top: 90, width: 540 }}>
-        <div style={{ color: theme.muted, fontSize: 24, fontWeight: 850, marginBottom: 18 }}>
-          {visual.kind === "evidence" ? "事实画面" : "背景画面"}
-        </div>
         <div style={{ color: theme.ink, fontSize: 58, lineHeight: 1.04, fontWeight: theme.titleWeight }}>
           {clampText(scene.content?.headline ?? scene.visualBrief?.headline ?? getMainLine(scene.subtitle, 16), 18)}
         </div>
@@ -4095,6 +4062,7 @@ const QualitativeInsightFrame = ({
 }) => {
   const visualTheme = toVisualTheme(theme);
   const nodes = graphNodesFromScene(scene).slice(0, 5);
+  const graph = buildSceneGraph(scene, nodes);
   const lines = directorMainText(scene, 13).slice(0, 2);
   return (
     <div style={{ display: "grid", gridTemplateColumns: "0.82fr 1.18fr", gap: 38, height: "100%", alignItems: "center" }}>
@@ -4105,8 +4073,8 @@ const QualitativeInsightFrame = ({
         style={{ textAlign: "left" }}
       />
       <NodeGraph
-        nodes={nodes}
-        edges={graphEdgesFromNodes(nodes)}
+        nodes={graph.nodes}
+        edges={graph.edges}
         theme={visualTheme}
         style={{ height: "100%" }}
       />
@@ -4119,7 +4087,142 @@ const shellTitle = (scene: Scene) =>
     ? scene.visualBrief?.headline ?? scene.content?.headline ?? getMainLine(scene.subtitle, 18)
     : scene.content?.headline ?? scene.visualBrief?.headline ?? getMainLine(scene.subtitle, 18);
 
-const visualShellLayout = (directorType?: DirectorSceneType): {
+const compositionTitleStyle = (
+  placement: DirectorCompositionTitlePlacement,
+  baseTitle: CSSProperties,
+): CSSProperties => {
+  if (placement === "top-center") {
+    return {
+      ...baseTitle,
+      left: "50%",
+      top: 44,
+      width: 980,
+      textAlign: "center",
+      transform: "translateX(-50%)",
+      fontSize: 48,
+    };
+  }
+  if (placement === "left-rail") {
+    return {
+      ...baseTitle,
+      left: 74,
+      top: 110,
+      width: 250,
+      fontSize: 46,
+      lineHeight: 1.12,
+    };
+  }
+  if (placement === "right-rail") {
+    return {
+      ...baseTitle,
+      right: 72,
+      top: 92,
+      width: 280,
+      textAlign: "right",
+      fontSize: 44,
+      lineHeight: 1.12,
+    };
+  }
+  if (placement === "bottom-left") {
+    return {
+      ...baseTitle,
+      left: 76,
+      bottom: 88,
+      width: 680,
+      fontSize: 44,
+    };
+  }
+  return {
+    ...baseTitle,
+    left: 76,
+    top: 52,
+    maxWidth: 720,
+    fontSize: 46,
+  };
+};
+
+const compositionContentStyle = (
+  layout: DirectorCompositionLayout,
+  baseContent: CSSProperties,
+): CSSProperties => {
+  if (
+    layout === "center-stage" ||
+    layout === "question-center" ||
+    layout === "judgement-center"
+  ) {
+    return { ...baseContent, left: 150, right: 150, top: 70, bottom: 96 };
+  }
+  if (
+    layout === "evidence-full-bleed" ||
+    layout === "radial-network" ||
+    layout === "signal-rings" ||
+    layout === "competition-arena"
+  ) {
+    return { ...baseContent, left: 38, right: 38, top: 34, bottom: 58 };
+  }
+  if (
+    layout === "rail-left-detail-right" ||
+    layout === "summary-stack" ||
+    layout === "lane-map" ||
+    layout === "proof-stack"
+  ) {
+    return { ...baseContent, left: 344, right: 66, top: 58, bottom: 72 };
+  }
+  if (
+    layout === "table-led" ||
+    layout === "investigation-strip" ||
+    layout === "stack-diagonal" ||
+    layout === "barrier-section" ||
+    layout === "signal-map"
+  ) {
+    return { ...baseContent, left: 54, right: 364, top: 54, bottom: 72 };
+  }
+  if (
+    layout === "title-top-track-bottom" ||
+    layout === "metric-split-grid" ||
+    layout === "equal-split" ||
+    layout === "price-side-by-side" ||
+    layout === "dual-path" ||
+    layout === "evidence-contact-sheet"
+  ) {
+    return { ...baseContent, left: 58, right: 58, top: 146, bottom: 70 };
+  }
+  if (
+    layout === "object-right-copy-left" ||
+    layout === "verdict-asymmetric" ||
+    layout === "evidence-split-annotation" ||
+    layout === "investigation-split" ||
+    layout === "evidence-recap"
+  ) {
+    return { ...baseContent, left: 66, right: 44, top: 126, bottom: 66 };
+  }
+  if (
+    layout === "flow-diagram" ||
+    layout === "resource-pipeline"
+  ) {
+    return { ...baseContent, left: 60, right: 60, top: 132, bottom: 74 };
+  }
+  if (
+    layout === "metric-center-orbit" ||
+    layout === "callout-orbit" ||
+    layout === "pressure-gauge" ||
+    layout === "stack-center" ||
+    layout === "barrier-grid" ||
+    layout === "competition-stack"
+  ) {
+    return { ...baseContent, left: 84, right: 84, top: 126, bottom: 70 };
+  }
+  if (
+    layout === "price-waterfall" ||
+    layout === "question-off-axis" ||
+    layout === "summary-center"
+  ) {
+    return { ...baseContent, left: 104, right: 104, top: 126, bottom: 92 };
+  }
+  return { ...baseContent, left: 62, right: 62, top: 132, bottom: 70 };
+};
+
+const visualShellLayout = (scene: Scene): {
   titleStyle: CSSProperties;
   contentStyle: CSSProperties;
   titleMax: number;
@@ -4138,16 +4241,22 @@ const visualShellLayout = (directorType?: DirectorSceneType): {
     overflow: "hidden",
     zIndex: 1,
   };
+  const profile = resolveDirectorCompositionProfile(scene);
 
-  if (directorType === "Hero") {
+  if (profile) {
     return {
-      titleMax: 15,
-      showTitle: false,
-      titleStyle: { ...baseTitle, left: "50%", top: 58, width: 1120, textAlign: "center", transform: "translateX(-50%)", fontSize: 70 },
-      contentStyle: { ...baseContent, left: 110, right: 110, top: 46, bottom: 108 },
+      titleMax:
+        profile.titlePlacement === "left-rail" ||
+        profile.titlePlacement === "right-rail"
+          ? 11
+          : 16,
+      showTitle: profile.titlePlacement !== "hidden",
+      titleStyle: compositionTitleStyle(profile.titlePlacement, baseTitle),
+      contentStyle: compositionContentStyle(profile.layout, baseContent),
     };
   }
 
+  const directorType = scene.directorType;
   if (directorType === "Timeline") {
     return {
       titleMax: 16,
@@ -4211,8 +4320,7 @@ const visualShellLayout = (directorType?: DirectorSceneType): {
 };
 
 const VisualLibraryShell = ({ scene, theme, children }: { scene: Scene; theme: Theme; children: ReactNode }) => {
-  const directorType = scene.directorType;
-  const layout = visualShellLayout(directorType);
+  const layout = visualShellLayout(scene);
   const title = getMainLine(shellTitle(scene), layout.titleMax);
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", fontFamily: theme.fontFamily, color: theme.ink }}>
@@ -4222,17 +4330,181 @@ const VisualLibraryShell = ({ scene, theme, children }: { scene: Scene; theme: T
   );
 };
 
+const compositionEntranceStyle = (
+  frame: number,
+  profile?: DirectorCompositionProfile,
+): CSSProperties => {
+  if (!profile) return {};
+
+  const progress = interpolate(frame, [0, 22], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+  const springProgress = spring({
+    frame,
+    fps: 30,
+    config: { damping: 18, stiffness: 120, mass: 0.8 },
+    durationInFrames: 26,
+  });
+  const fromX =
+    profile.motion === "object-push" ||
+    profile.motion === "path-trace" ||
+    profile.motion === "lane-flow" ||
+    profile.motion === "flow-trace"
+      ? 56
+      : profile.motion === "cutaway-scan" ||
+          profile.motion === "section-scan" ||
+          profile.motion === "ripple-spread"
+        ? -46
+        : 0;
+  const fromY =
+    profile.motion === "stack-rise" ||
+    profile.motion === "waterfall-drop" ||
+    profile.motion === "milestone-pop" ||
+    profile.motion === "proof-stagger"
+      ? 48
+      : 0;
+  const startScale =
+    profile.motion === "metric-burst" ||
+    profile.motion === "network-bloom" ||
+    profile.motion === "ring-pulse" ||
+    profile.motion === "verdict-snap"
+      ? 0.92
+      : 0.98;
+  const revealUsesClip =
+    profile.motion === "track-draw" ||
+    profile.motion === "row-wipe" ||
+    profile.motion === "annotation-stagger" ||
+    profile.motion === "recap-stagger" ||
+    profile.motion === "grid-lock";
+
+  return {
+    opacity: progress,
+    transform: `translate3d(${(1 - springProgress) * fromX}px, ${(1 - springProgress) * fromY}px, 0) scale(${startScale + (1 - startScale) * springProgress})`,
+    clipPath: revealUsesClip
+      ? `inset(0 ${(1 - progress) * 100}% 0 0 round 12px)`
+      : undefined,
+  };
+};
+
+const DirectorCompositionBoundary = ({
+  scene,
+  children,
+}: {
+  scene: Scene;
+  children: ReactNode;
+}) => {
+  const frame = useCurrentFrame();
+  const profile = resolveDirectorCompositionProfile(scene);
+
+  return (
+    <div
+      data-renderer-family={scene.rendererFamily ?? profile?.rendererFamily}
+      data-visual-treatment={scene.visualTreatment ?? profile?.visualTreatment}
+      data-layout-recipe={scene.layoutRecipe}
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        transformOrigin: "center",
+        ...compositionEntranceStyle(frame, profile),
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
 const VisualLibraryScene = ({ scene, directorType, theme }: { scene: Scene; directorType?: DirectorSceneType; theme: Theme }): ReactNode | null => {
   const visualTheme = toVisualTheme(theme);
   const metrics = metricItemsFromScene(scene);
-  const nodes = graphNodesFromScene(scene);
-  const edges = graphEdgesFromNodes(nodes);
+  const fallbackNodes = graphNodesFromScene(scene);
+  const graph = buildSceneGraph(scene, fallbackNodes);
+  const nodes = graph.nodes;
+  const edges = graph.edges;
   const chartPoints = chartPointsFromScene(scene);
   const heatmapPoints = factualHeatmapPointsFromScene(scene);
   const gaugeValue = factualGaugeValueFromScene(scene);
   const candles = candlesFromScene(scene);
   const timelineItems = timelineItemsFromScene(scene);
   const text = sceneText(scene);
+
+  if (hasComponent(scene, ["MoonPerceptionFrame"])) {
+    return (
+      <VisualLibraryShell scene={scene} theme={theme}>
+        <MoonPerceptionFrame
+          mode={scene.content?.highlight === "closing" ? "closing" : "compare"}
+          theme={visualTheme}
+          style={{ height: "100%" }}
+        />
+      </VisualLibraryShell>
+    );
+  }
+
+  if (hasComponent(scene, ["ReferenceScaleFrame"])) {
+    return (
+      <VisualLibraryShell scene={scene} theme={theme}>
+        <ReferenceScaleFrame theme={visualTheme} style={{ height: "100%" }} />
+      </VisualLibraryShell>
+    );
+  }
+
+  if (hasComponent(scene, ["AttentionFieldFrame"])) {
+    return (
+      <VisualLibraryShell scene={scene} theme={theme}>
+        <AttentionFieldFrame theme={visualTheme} style={{ height: "100%" }} />
+      </VisualLibraryShell>
+    );
+  }
+
+  if (hasComponent(scene, ["FieldOfViewFrame"])) {
+    return (
+      <VisualLibraryShell scene={scene} theme={theme}>
+        <FieldOfViewFrame
+          mode={scene.content?.highlight === "narrow" ? "narrow" : "wide"}
+          theme={visualTheme}
+          style={{ height: "100%" }}
+        />
+      </VisualLibraryShell>
+    );
+  }
+
+  if (hasComponent(scene, ["AngularDiameterFrame"])) {
+    return (
+      <VisualLibraryShell scene={scene} theme={theme}>
+        <AngularDiameterFrame theme={visualTheme} style={{ height: "100%" }} />
+      </VisualLibraryShell>
+    );
+  }
+
+  if (hasComponent(scene, ["DistanceMythFrame"])) {
+    return (
+      <VisualLibraryShell scene={scene} theme={theme}>
+        <DistanceMythFrame theme={visualTheme} style={{ height: "100%" }} />
+      </VisualLibraryShell>
+    );
+  }
+
+  if (hasComponent(scene, ["ZoomCropFrame"])) {
+    return (
+      <VisualLibraryShell scene={scene} theme={theme}>
+        <ZoomCropFrame theme={visualTheme} style={{ height: "100%" }} />
+      </VisualLibraryShell>
+    );
+  }
+
+  if (hasComponent(scene, ["MoonCompositionFrame"])) {
+    return (
+      <VisualLibraryShell scene={scene} theme={theme}>
+        <MoonCompositionFrame
+          mode={scene.content?.highlight === "controls" ? "controls" : "reframe"}
+          theme={visualTheme}
+          style={{ height: "100%" }}
+        />
+      </VisualLibraryShell>
+    );
+  }
 
   if (directorType === "EvidenceHero" || hasComponent(scene, ["EvidenceZoom", "EvidenceCallout", "LogoCornerCompare"])) {
     const lines = directorMainText(scene, 12);
@@ -4689,7 +4961,13 @@ const SceneVisual = ({
   if (primaryVisual?.sourceKind === "generated-concept") {
     return <GeneratedConceptFrame scene={scene} theme={theme} concept={primaryVisual} />;
   }
-  if (primaryVisual?.sourceKind === "ordinary") {
+  const ordinaryVisualIsEvidenceLead =
+    primaryVisual?.sourceKind === "ordinary" &&
+    (directorType === "EvidenceHero" ||
+      directorType === "EvidenceReturn" ||
+      sceneType === "evidence-zoom" ||
+      hasComponent(scene, ["EvidenceZoom", "EvidenceCallout", "EvidenceReturnFrame"]));
+  if (ordinaryVisualIsEvidenceLead) {
     return <OrdinaryPrimaryVisualFrame scene={scene} theme={theme} visual={primaryVisual} />;
   }
 
@@ -4752,6 +5030,9 @@ const SceneVisual = ({
   if (sceneType === "evidence-zoom") return <EvidenceFrame scene={scene} theme={theme} />;
   if (sceneType === "concept-steps") return <ConceptStepsScene scene={scene} theme={theme} />;
   if (sceneType === "quote-impact") return <QuoteImpactScene scene={scene} theme={theme} />;
+  if (primaryVisual?.sourceKind === "ordinary") {
+    return <OrdinaryPrimaryVisualFrame scene={scene} theme={theme} visual={primaryVisual} />;
+  }
   return <ClosingFrame scene={scene} theme={theme} />;
 };
 
@@ -4898,8 +5179,9 @@ const SceneFrame = ({
   const accent = getAccent(index, theme);
   const opacity = fade(frame, 0, 12);
   const y = slide(frame, 0, 20, 24);
-  const baseWidth = 1920;
-  const baseHeight = 1080;
+  const isPortrait = height > width;
+  const baseWidth = isPortrait ? 1080 : 1920;
+  const baseHeight = isPortrait ? 1920 : 1080;
   const stageScale = Math.min(width / baseWidth, height / baseHeight);
   const stageLeft = (width - baseWidth * stageScale) / 2;
   const stageTop = (height - baseHeight * stageScale) / 2;
@@ -4924,17 +5206,13 @@ const SceneFrame = ({
   if ("transform" in emphasisRest) {
     delete emphasisRest.transform;
   }
-  const shotInset =
-    caseWorkflow
-      ? "72px 110px 260px 120px"
-      :
-    scene.shotStyle === "Burst"
-      ? "90px 108px 118px 128px"
-      : scene.shotStyle === "Split"
-        ? "96px 108px 126px 128px"
-        : scene.shotStyle === "Zoom"
-          ? "92px 108px 120px 128px"
-          : "96px 108px 126px 128px";
+  const shotInset = resolveSceneStageInset({
+    width,
+    height,
+    hasDirector: Boolean(scene.directorType),
+    shotStyle: scene.shotStyle,
+    caseWorkflow,
+  });
 
   return (
     <AbsoluteFill style={{ background: theme.paper, fontFamily: theme.fontFamily, color: theme.ink, overflow: "hidden" }}>
@@ -4977,7 +5255,9 @@ const SceneFrame = ({
               ...emphasisRest,
             }}
           >
-            <SceneVisual scene={scene} sceneType={sceneType} directorType={directorType} theme={theme} assetManifest={assetManifest} />
+            <DirectorCompositionBoundary scene={scene}>
+              <SceneVisual scene={scene} sceneType={sceneType} directorType={directorType} theme={theme} assetManifest={assetManifest} />
+            </DirectorCompositionBoundary>
           </div>
         </div>
         {caseWorkflow ? null : <VisualEffectsOverlay scene={scene} theme={theme} />}

@@ -29,6 +29,24 @@ export type RenderVideoInput = {
 };
 
 const projectRoot = process.cwd();
+let remotionBundlePromise: Promise<string> | undefined;
+
+export const getRemotionServeUrl = async (): Promise<string> => {
+  if (!remotionBundlePromise) {
+    remotionBundlePromise = import("@remotion/bundler").then(({ bundle }) =>
+      bundle(path.join(projectRoot, "remotion", "index.ts")),
+    );
+  }
+
+  const pendingBundle = remotionBundlePromise;
+  try {
+    return await pendingBundle;
+  } finally {
+    if (remotionBundlePromise === pendingBundle) {
+      remotionBundlePromise = undefined;
+    }
+  }
+};
 
 const copyRuntimeAssets = async (
   renderData: GeneratedScenes,
@@ -48,23 +66,37 @@ const copyRuntimeAssets = async (
 
   const imageNames = new Set(renderData.scenes.flatMap((scene) => scene.images));
   const copiedImageNames = new Set<string>();
+  const audioFileName = path.basename(audioPath);
   if (materialPackPath) {
-    for (const imageName of imageNames) {
-      await copyFile(await resolveMaterialImagePath(materialPackPath, imageName), path.join(publicRuntimeDir, "images", imageName));
-      copiedImageNames.add(imageName);
-    }
+    const materialImageNames = [...imageNames];
+    await Promise.all([
+      copyFile(audioPath, path.join(publicRuntimeDir, audioFileName)),
+      ...materialImageNames.map(async (imageName) => {
+        await copyFile(
+          await resolveMaterialImagePath(materialPackPath, imageName),
+          path.join(publicRuntimeDir, "images", imageName),
+        );
+      }),
+    ]);
+    materialImageNames.forEach((imageName) => copiedImageNames.add(imageName));
+  } else {
+    await copyFile(audioPath, path.join(publicRuntimeDir, audioFileName));
   }
 
   if (assetManifest) {
+    const assetsByFileName = new Map<string, string>();
     for (const asset of assetManifest.assets) {
       if (!asset.fileName || !asset.localPath) continue;
-      await copyFile(asset.localPath, path.join(publicRuntimeDir, "images", asset.fileName));
-      copiedImageNames.add(asset.fileName);
+      assetsByFileName.set(asset.fileName, asset.localPath);
     }
+    await Promise.all(
+      [...assetsByFileName].map(([fileName, localPath]) =>
+        copyFile(localPath, path.join(publicRuntimeDir, "images", fileName)),
+      ),
+    );
+    assetsByFileName.forEach((_localPath, fileName) => copiedImageNames.add(fileName));
   }
 
-  const audioFileName = path.basename(audioPath);
-  await copyFile(audioPath, path.join(publicRuntimeDir, audioFileName));
   const directorSceneById = new Map(directorPlan.scenes.map((scene) => [scene.id, scene]));
   const mergeDirectorScene = (scene: Scene): Scene => {
     const directorScene = directorSceneById.get(scene.id);
@@ -176,9 +208,8 @@ export const renderVideo = async ({
     publicRuntimeDir,
     publicRuntimeBase,
   );
-  const { bundle } = await import("@remotion/bundler");
   const { renderMedia, selectComposition } = await import("@remotion/renderer");
-  const serveUrl = await bundle(path.join(projectRoot, "remotion", "index.ts"));
+  const serveUrl = await getRemotionServeUrl();
   const composition = await selectComposition({
     serveUrl,
     id: "ShinVideo",
@@ -199,7 +230,6 @@ export const renderVideo = async ({
     expectedDurationSeconds: renderData.duration,
     expectedWidth: renderData.width,
     expectedHeight: renderData.height,
-    scenes: inputProps.scenes,
   });
   if (!postRenderReport.passed) {
     await rm(outputPath, { force: true });

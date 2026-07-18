@@ -250,7 +250,7 @@ const parseMetricTokens = (text: string): ParsedMetricToken[] => {
   };
 
   for (const match of text.matchAll(
-    /(\d+(?:\.\d+)?)\s*(亿元|万元|%|倍|K|B|亿|万|元)/gi,
+    /(\d+(?:\.\d+)?)\s*(亿元|万元|TOPS|GB|MB|TB|ms|%|倍|K|B|亿|万|元|°)/gi,
   )) {
     const multiplier = cnyMultiplier(match[2]);
     addToken(
@@ -272,7 +272,7 @@ const parseMetricTokens = (text: string): ParsedMetricToken[] => {
   }
 
   for (const match of text.matchAll(
-    new RegExp(`(${chineseNumber})\\s*(亿元|万元|倍|K|B|亿|万|元)`, "gi"),
+    new RegExp(`(${chineseNumber})\\s*(亿元|万元|TOPS|GB|MB|TB|ms|倍|K|B|亿|万|元|°)`, "gi"),
   )) {
     if (match[1] === "百" && text[match.index! - 1] === "每") continue;
     const canonicalValue = parseChineseNumber(match[1]);
@@ -356,6 +356,28 @@ const extractRelations = (
   text: string,
   source: SemanticSourceRef,
 ): SceneSemantics["relations"] => {
+  const sharedOutcome = stripSourceLead(text).match(
+    /^(.+?)(?:[，,])?\s*共同决定(.+?)[。；]?$/,
+  );
+  if (sharedOutcome) {
+    const contributors = unique(
+      sharedOutcome[1]
+        .replace(/[，,\s]+$/g, "")
+        .split(/、|和|以及/)
+        .map(clean),
+    );
+    const outcome = clean(sharedOutcome[2]);
+
+    if (contributors.length >= 2 && outcome) {
+      return contributors.map((from) => ({
+        from,
+        to: outcome,
+        relation: "共同决定",
+        source,
+      }));
+    }
+  }
+
   const match = stripSourceLead(text).match(
     /^(.+?)绕不开两条路：一条是(.+?)，一条是(.+?)[。；]?$/,
   );

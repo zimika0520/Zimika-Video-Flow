@@ -83,6 +83,8 @@ const directorFingerprintPayload = (scenes: Scene[]) =>
     images: scene.images,
     sceneType: scene.sceneType,
     visualIntent: scene.visualIntent,
+    rendererFamily: scene.rendererFamily,
+    visualTreatment: scene.visualTreatment,
     layoutRecipe: scene.layoutRecipe,
     motionVariant: scene.motionVariant,
     transition: scene.transition,
@@ -98,7 +100,7 @@ export const buildRuntimeDirectorPlan = (
     "scenes" | "narrativeLayer" | "videoArchetype" | "creativeBrief" | "directorScript" | "videoBrief" | "visualManifest" | "directorQualityTargets"
   >,
 ): RuntimeDirectorPlan => ({
-  directorPlanVersion: 1,
+  directorPlanVersion: 2,
   sourceScenesFingerprint: createSourceScenesFingerprint(renderInput.scenes),
   qualityTargets: renderInput.directorQualityTargets,
   videoDirectorWorkflow,
@@ -141,6 +143,10 @@ export const buildRuntimeDirectorPlan = (
     (scene): DirectorPlanScene => ({
       id: scene.id,
       directorType: scene.directorType,
+      rendererFamily: scene.rendererFamily,
+      visualTreatment: scene.visualTreatment,
+      layout: scene.layout,
+      layoutRecipe: scene.layoutRecipe,
       narrativeRole: scene.narrativeRole,
       importance: scene.importance,
       role: scene.role,

@@ -227,6 +227,96 @@ export type DirectorVisualTreatment =
   | "final-judgement"
   | "final-proof-stack";
 
+export type DirectorCompositionLayout =
+  | "center-stage"
+  | "object-right-copy-left"
+  | "title-top-track-bottom"
+  | "rail-left-detail-right"
+  | "radial-network"
+  | "flow-diagram"
+  | "metric-center-orbit"
+  | "metric-split-grid"
+  | "equal-split"
+  | "verdict-asymmetric"
+  | "table-led"
+  | "callout-orbit"
+  | "price-waterfall"
+  | "price-side-by-side"
+  | "question-center"
+  | "question-off-axis"
+  | "summary-center"
+  | "summary-stack"
+  | "evidence-full-bleed"
+  | "evidence-split-annotation"
+  | "investigation-split"
+  | "investigation-strip"
+  | "pressure-gauge"
+  | "resource-pipeline"
+  | "stack-center"
+  | "stack-diagonal"
+  | "dual-path"
+  | "lane-map"
+  | "barrier-grid"
+  | "barrier-section"
+  | "evidence-recap"
+  | "evidence-contact-sheet"
+  | "signal-rings"
+  | "signal-map"
+  | "competition-stack"
+  | "competition-arena"
+  | "judgement-center"
+  | "proof-stack";
+
+export type DirectorCompositionMotion =
+  | "center-reveal"
+  | "object-push"
+  | "track-draw"
+  | "milestone-pop"
+  | "network-bloom"
+  | "path-trace"
+  | "metric-burst"
+  | "counter-stagger"
+  | "split-open"
+  | "verdict-snap"
+  | "row-wipe"
+  | "callout-stagger"
+  | "waterfall-drop"
+  | "focus-hold"
+  | "spotlight-reveal"
+  | "summary-settle"
+  | "stack-rise"
+  | "evidence-push"
+  | "annotation-stagger"
+  | "keyword-lock"
+  | "cutaway-scan"
+  | "pressure-fill"
+  | "flow-trace"
+  | "lane-flow"
+  | "grid-lock"
+  | "section-scan"
+  | "recap-stagger"
+  | "ring-pulse"
+  | "ripple-spread"
+  | "arena-orbit"
+  | "proof-stagger";
+
+export type DirectorCompositionTitlePlacement =
+  | "hidden"
+  | "top-left"
+  | "top-center"
+  | "left-rail"
+  | "right-rail"
+  | "bottom-left";
+
+export type DirectorCompositionProfile = {
+  directorType: DirectorSceneType;
+  rendererFamily: DirectorRendererFamily;
+  visualTreatment: DirectorVisualTreatment;
+  layout: DirectorCompositionLayout;
+  motion: DirectorCompositionMotion;
+  titlePlacement: DirectorCompositionTitlePlacement;
+};
+
 export type DirectorCandidate = {
   type: DirectorSceneType;
   rendererFamily: DirectorRendererFamily;
@@ -649,7 +739,7 @@ export type RenderQualitySummary = {
   height: number;
   sizeBytes: number;
   hasAudioStream: boolean;
-  sampledFrameCount: number;
+  longBlackSegmentCount: number;
   primaryVisualUsage?: Array<{
     sceneId: string;
     assetId: string;
@@ -665,6 +755,9 @@ export type VideoQualityReport = ProductionGateReport & {
 export type DirectorPlanScene = Partial<Scene> & {
   id: string;
   directorType?: DirectorSceneType;
+  rendererFamily?: DirectorRendererFamily;
+  visualTreatment?: DirectorVisualTreatment;
+  layoutRecipe?: LayoutRecipe;
   shotStyle?: ShotStyle;
   importance?: number;
   animation?: Partial<SceneAnimationSystem>;

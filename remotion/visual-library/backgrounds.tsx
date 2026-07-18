@@ -10,11 +10,11 @@ const clamp = {
 export const SoftGradientBackground = ({ theme, style }: TimedVisualProps) => {
   const frame = useCurrentFrame();
   const { palette } = resolveTheme(theme);
-  const drift = interpolate(frame % 240, [0, 120, 240], [0, 1, 0], clamp);
+  const settleProgress = interpolate(frame, [0, 54], [0, 1], clamp);
   return (
     <AbsoluteFill
       style={{
-        background: `radial-gradient(circle at ${24 + drift * 28}% ${22 + drift * 20}%, ${palette.secondary}26, transparent 35%), radial-gradient(circle at ${76 - drift * 18}% 74%, ${palette.accent}20, transparent 38%), linear-gradient(135deg, ${palette.bg}, #ffffff)`,
+        background: `radial-gradient(circle at ${24 + settleProgress * 16}% ${22 + settleProgress * 10}%, ${palette.secondary}26, transparent 35%), radial-gradient(circle at ${76 - settleProgress * 10}% 74%, ${palette.accent}20, transparent 38%), linear-gradient(135deg, ${palette.bg}, #ffffff)`,
         ...style,
       }}
     />
@@ -24,7 +24,8 @@ export const SoftGradientBackground = ({ theme, style }: TimedVisualProps) => {
 export const DataFieldBackground = ({ theme, style }: TimedVisualProps) => {
   const frame = useCurrentFrame();
   const { palette } = resolveTheme(theme);
-  const offset = frame % 48;
+  const settleProgress = interpolate(frame, [0, 42], [0, 1], clamp);
+  const offset = settleProgress * 24;
   return (
     <AbsoluteFill
       style={{
@@ -41,7 +42,8 @@ export const DataFieldBackground = ({ theme, style }: TimedVisualProps) => {
 export const GridDepthBackground = ({ theme, style }: TimedVisualProps) => {
   const frame = useCurrentFrame();
   const { palette } = resolveTheme(theme);
-  const y = interpolate(frame % 180, [0, 180], [0, 80], clamp);
+  const settleProgress = interpolate(frame, [0, 48], [0, 1], clamp);
+  const y = settleProgress * 48;
   return (
     <AbsoluteFill
       style={{
@@ -70,6 +72,7 @@ export const GridDepthBackground = ({ theme, style }: TimedVisualProps) => {
 export const RadarBackground = ({ theme, style }: TimedVisualProps) => {
   const frame = useCurrentFrame();
   const { palette } = resolveTheme(theme);
+  const settleProgress = interpolate(frame, [0, 52], [0, 1], clamp);
   return (
     <AbsoluteFill style={{ background: palette.bg, overflow: "hidden", ...style }}>
       <div
@@ -80,7 +83,7 @@ export const RadarBackground = ({ theme, style }: TimedVisualProps) => {
           borderRadius: "50%",
           left: "50%",
           top: "50%",
-          transform: `translate(-50%, -50%) rotate(${frame * 0.18}deg)`,
+          transform: `translate(-50%, -50%) rotate(${settleProgress * 24}deg)`,
           background: `conic-gradient(from 0deg, ${palette.primary}44, transparent 24%, transparent 100%)`,
           opacity: 0.5,
         }}

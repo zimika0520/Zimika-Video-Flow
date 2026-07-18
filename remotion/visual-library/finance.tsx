@@ -104,7 +104,7 @@ export const PositionFlow = ({
 }) => {
   const frame = useCurrentFrame();
   const { palette, fontFamily, radius, shadow } = resolveTheme(theme);
-  const progress = interpolate(frame % 80, [0, 80], [0, 1], clamp);
+  const progress = interpolate(frame, [0, 42], [0, 1], clamp);
   return (
     <div style={{ position: "relative", height: 230, fontFamily, ...style }}>
       {[from, to].map((label, index) => (

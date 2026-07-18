@@ -730,10 +730,12 @@ export const researchAssets = async ({
   }
 
   const searchPages = dryRun ? [] : await searchRelatedPages(queryTerms, Math.max(maxAssets * 2, 8));
-  const pageUrls = [
-    ...searchPages,
-    ...(sourceUrl && !/mp\.weixin\.qq\.com/i.test(sourceUrl) ? [sourceUrl] : []),
-  ].filter(Boolean) as string[];
+  const pageUrls = dryRun
+    ? []
+    : [
+        ...searchPages,
+        ...(sourceUrl && !/mp\.weixin\.qq\.com/i.test(sourceUrl) ? [sourceUrl] : []),
+      ].filter(Boolean) as string[];
   const chromePath = dryRun ? undefined : await findChrome();
   if (!dryRun && !chromePath) {
     warnings.push("未找到 Chrome/Chromium，无法截取真实网页截图；将降级为 OpenGraph 图片和来源卡片。");

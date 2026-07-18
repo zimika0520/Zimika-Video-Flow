@@ -57,8 +57,24 @@ const manifest: RuntimeAssetManifest = {
 };
 
 describe("scene primary visual", () => {
-  test("uses a valid generated concept before ordinary evidence when both are available", () => {
+  test("uses bound evidence before a generated concept when both are available", () => {
     expect(resolveScenePrimaryVisual(scene, manifest)).toEqual(
+      expect.objectContaining({
+        sourceKind: "ordinary",
+        assetId: "evidence",
+        kind: "evidence",
+        runtimeImage: "runtime/evidence.png",
+      }),
+    );
+  });
+
+  test("uses a generated concept when no bound evidence or context is renderable", () => {
+    expect(
+      resolveScenePrimaryVisual(
+        { ...scene, images: ["runtime/concept.png"] },
+        manifest,
+      ),
+    ).toEqual(
       expect.objectContaining({
         sourceKind: "generated-concept",
         assetId: "concept",
@@ -68,10 +84,15 @@ describe("scene primary visual", () => {
     );
   });
 
-  test("falls back to ordinary evidence when no renderable concept is available", () => {
+  test("continues to later explicit refs when an earlier ref is not renderable", () => {
     expect(
       resolveScenePrimaryVisual(
-        { ...scene, images: ["runtime/evidence.png"] },
+        {
+          ...scene,
+          images: ["runtime/evidence.png"],
+          primaryVisualAsset: "concept",
+          evidenceAsset: "evidence",
+        },
         manifest,
       ),
     ).toEqual(
@@ -82,5 +103,25 @@ describe("scene primary visual", () => {
         runtimeImage: "runtime/evidence.png",
       }),
     );
+  });
+
+  test("does not borrow an asset bound to another scene", () => {
+    const otherSceneManifest: RuntimeAssetManifest = {
+      ...manifest,
+      sceneBindings: [
+        {
+          sceneId: "scene-2",
+          assetIds: ["evidence"],
+          reason: "belongs to another scene",
+        },
+      ],
+    };
+
+    expect(
+      resolveScenePrimaryVisual(
+        { ...scene, images: ["runtime/evidence.png"] },
+        otherSceneManifest,
+      ),
+    ).toBeUndefined();
   });
 });
