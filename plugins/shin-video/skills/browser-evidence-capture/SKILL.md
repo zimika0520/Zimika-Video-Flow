@@ -1,0 +1,145 @@
+---
+name: browser-evidence-capture
+description: 使用当前浏览器或 Chrome/Chromium 把文章页面、关键段落、网页截图和可复核证据保存为 Shin-video 的 evidence records。
+---
+
+# Browser Evidence Capture
+
+> 路径约定：`RUN_DIR` 表示当前项目的 `<项目目录>/_runtime/<run-id>/`。`public/runtime/` 仅用于 Remotion 静态资源，不得作为项目中间产物目录。
+
+## 能解决什么问题
+
+把“给一个链接就做视频”拆成可复核的证据采集步骤。它负责先把用户打开的文章页面、外部资料页、关键段落、截图和裁剪区域整理成证据记录，再交给 `asset-researcher`、`visual-manifest-builder` 和导演系统。
+
+这个 Skill 的目标不是随机找图，而是回答：
+
+```text
+这条视频里的画面依据来自哪里？
+哪一段口播由哪张截图、哪段原文或哪个外部页面支撑？
+截图、红框、裁剪区域能否复核？
+```
+
+## 输入
+
+```text
+文章链接或当前浏览器页面
+文章标题
+RUN_DIR/video-brief.json
+RUN_DIR/scenes.json
+用户对素材来源的限制
+```
+
+如果用户明确说“不要用公众号原文图片”，本 Skill 仍可保存公众号正文 HTML、正文快照和关键段落证据卡，但不能把公众号内配图当作素材资产进入最终视频。
+
+## 输出
+
+写入或补充：
+
+```text
+RUN_DIR/asset-manifest.json
+RUN_DIR/assets/source-article.html
+RUN_DIR/assets/source-article-text.txt
+RUN_DIR/assets/*-evidence-card.svg
+```
+
+`asset-manifest.json` 中必须包含 `evidenceRecords`，用于记录：
+
+```text
+id
+kind
+sourceUrl
+sourceTitle
+sourceDomain
+localPath
+text
+targetText
+narrationClaim
+coordinateSpace
+verificationMethod
+capturedAt
+notes
+```
+
+## 推荐执行方式
+
+### 1. Agent 有 Chrome / 内置浏览器集成时
+
+优先读取当前用户打开的页面：
+
+```text
+读取页面标题
+读取正文结构
+记录关键段落文本
+记录关键段落坐标
+截图整页或关键区域
+保存 HTML 和正文快照
+```
+
+截图和红框不能靠肉眼猜位置。所有框选、裁剪、放大都必须记录坐标空间：
+
+```text
+source_document
+normalized_frame
+source_crop_pixels
+rendered_frame_pixels
+```
+
+### 2. 没有浏览器集成时
+
+降级到本地能力：
+
+```text
+fetch 文章 HTML
+清洗正文
+用 Chrome/Chromium headless 截外部网页
+生成原文关键段落 evidence-card
+```
+
+这条降级路径必须仍然生成 `evidenceRecords`，不能只生成几张无法追溯来源的图片。
+
+## 执行规则
+
+- 先保存源文章证据，再进行外部搜索补充。
+- 外部搜索只补充与事件主体、产品、公司、数据来源和关键概念相关的页面。
+- 公众号来源默认不使用原文图片，但可以保存正文、HTML 和关键段落证据卡。
+- 每个可进入视频的截图、证据卡或图片，都必须绑定至少一个 `narrationClaim` 或 `visualGoal`。
+- 红框、箭头、放大镜头必须绑定具体目标，不能随机框一块区域。
+- 若截图在 16:9 或 9:16 中不可读，必须裁剪或改成可读证据卡。
+- 证据卡只能呈现原文摘要或关键段落，不能伪造网页、数据、产品界面。
+
+## 禁止事项
+
+- 不要把随机搜索图当证据。
+- 不要使用 AI 图片伪造新闻页面、公众号页面、公司官网或数据图。
+- 不要把公众号原文配图偷偷塞进素材包。
+- 不要让截图、红框、字幕互相遮挡。
+- 不要只保存截图，不记录它支撑哪一句口播。
+
+## 与其他 Skill 的关系
+
+```text
+web-article-cleaner
+→ browser-evidence-capture
+→ video-brief-builder
+→ scene-generator
+→ asset-researcher
+→ visual-manifest-builder
+→ remotion-video-director
+→ remotion-renderer
+```
+
+`browser-evidence-capture` 负责“证据来自哪里”；
+`asset-researcher` 负责“还能补充哪些外部素材”；
+`visual-manifest-builder` 负责“每个镜头怎么使用这些证据”；
+`remotion-video-director` 负责“如何把证据变成镜头语言”。
+
+## 质量门槛
+
+进入渲染前必须检查：
+
+- `asset-manifest.json` 是否有 `evidenceRecords`
+- 是否保存了源文章正文快照
+- 关键镜头是否绑定证据或外部素材
+- 截图/证据卡是否避开底部字幕
+- 红框和裁剪区域是否有坐标或明确目标
+- 是否违反用户的素材来源限制

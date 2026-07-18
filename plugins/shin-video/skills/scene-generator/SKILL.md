@@ -1,0 +1,130 @@
+---
+name: scene-generator
+description: 根据口播文案.md 和 RUN_DIR/subtitle-timeline.json 生成 Remotion 可用的视频场景时间轴 RUN_DIR/scenes.json，定义每段画面内容、关键词、卡片、字幕、节奏和分段视觉配方。
+---
+
+# 视频场景生成
+
+把确认后的口播内容和 TTS 服务商原生时间轴转换成视频脚本。
+
+> 路径约定：`RUN_DIR` 表示当前项目的 `<项目目录>/_runtime/<run-id>/`。`public/runtime/` 仅用于 Remotion 静态资源，不得作为项目中间产物目录。
+
+## 输入
+
+```text
+口播文案.md
+RUN_DIR/subtitle-timeline.json
+```
+
+## 输出
+
+```text
+RUN_DIR/scenes.json
+```
+
+注意：`RUN_DIR/scenes.json` 不是最终导演方案。它是给 `remotion-video-director` 的场景候选和时间轴输入。真正的导演级镜头语言、叙事曲线和 Remotion 实现约束必须在下一步输出到 `RUN_DIR/director-plan.json`。
+
+## 生成内容
+
+每个场景至少包含：
+
+- 开始时间
+- 结束时间
+- 主标题或主表达
+- 关键短语
+- 字幕文本
+- 视觉意图
+- sceneType
+- layoutRecipe
+- motionVariant
+- transition
+- visualModules
+- pace
+- directorType 候选
+- importance 候选
+- role 候选
+- shotStyle 候选
+- animation 候选
+- background 候选
+- components 候选
+- content
+
+推荐 `sceneType`：
+
+```text
+impact-hook        冲击开场
+news-context       新闻背景
+data-breakdown     数据拆解
+relationship-map   关系图谱
+risk-contrast      风险对比
+timeline           时间线推进
+evidence-zoom      证据放大
+concept-steps      概念分步解释
+quote-impact       金句强调
+summary-card       结尾总结
+```
+
+每个 scene 输出示例：
+
+```json
+{
+  "id": "scene-0003",
+  "start": 12.4,
+  "end": 18.2,
+  "subtitle": "其中一个数字非常关键，相关收入已经超过12亿美金。",
+  "layout": "quote",
+  "emphasis": ["12亿美金"],
+  "sceneType": "data-breakdown",
+  "visualIntent": "explain-number",
+  "layoutRecipe": "stacked-data-cards",
+  "motionVariant": "scan-rise",
+  "transition": "scan-wipe",
+  "visualModules": ["transforms", "layers", "transitions", "effects", "fonts", "measuring", "animation-math", "noise", "svg-path", "color-interpolation", "html-in-canvas"],
+  "pace": "medium",
+  "directorType": "DataExplosion",
+  "importance": 8,
+  "role": "spike",
+  "shotStyle": "Burst",
+  "animation": {
+    "entrance": "maskReveal",
+    "emphasis": "kineticCounter",
+    "transition": "wipe",
+    "camera": "dollyIn"
+  },
+  "background": {
+    "type": "DataField",
+    "motion": "reactive",
+    "noise": false
+  },
+  "components": ["MetricCard", "KeywordCluster"],
+  "content": {
+    "mainMessage": "只保留关键词或数据，不复述完整字幕",
+    "keywords": ["12亿美金"],
+    "visualMetaphor": "数字卡放大，而不是把字幕原句写满画面"
+  }
+}
+```
+
+## 规则
+
+- 不依赖图片。
+- 不要求用户提供素材包。
+- 画面不能只有长段文字。
+- 每个场景只表达一个主要信息。
+- 时间轴必须来自最终音频对应的 TTS 服务商原生时间戳，`source` 必须是 `provider-native`。
+- 字幕正文必须只取确认后的 `口播文案.md`，不得使用服务商返回文本覆盖。
+- 服务商不返回原生时间戳时停止，只能切换到合格服务商重新生成同次音频与时间轴。
+- 单镜头超过 10 秒时应检查镜头内部是否有足够的信息和构图变化，但不能只因时长阻断后续渲染。
+- `floor(视频时长 / 10) + 1` 只作为镜头密度建议，不是硬配额。
+- 视觉形式按 `sceneType + directorType` 组合计算。
+- `floor(镜头数 / 2) + 1` 只作为声明多样性建议；最终是否重复由渲染后逐镜头代表帧判断。
+- 连续 2 段声明相同视觉形式或 `motionVariant` 时必须产生告警，并在渲染后重点检查最终构图。
+- 只改变淡入、平移、缩放等动效，不算新的视觉形式；必须改变画面结构或导演表达。
+- 第一段优先 `impact-hook`，最后一段必须是 `summary-card` 或同等 closing 结尾。
+- 数据密集段优先 `data-breakdown` / `risk-contrast`。
+- 解释型段优先 `concept-steps` / `relationship-map`。
+- 输出的 `RUN_DIR/scenes.json` 要给 Remotion 模板直接读取，不要让模板靠正则猜画面。
+- 主画面内容不能复制完整字幕。`subtitle` 是字幕，`content.mainMessage` 是主画面关键词、图形、数据或视觉隐喻。
+- 不能为图表、K 线、仪表盘或热力图编造数值；没有事实数据时改用定性结构表达。
+- 默认不要启用噪点；只有用户明确选择相关风格且画面不乱时，才允许 `background.noise = true`。
+- 生成后必须继续进入 `remotion-video-director`，不要直接进入风格选择或渲染。

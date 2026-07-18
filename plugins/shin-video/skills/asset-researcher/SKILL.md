@@ -1,0 +1,83 @@
+---
+name: asset-researcher
+description: 为 Shin-video 自动搜集与文章事件相关的网页证据、截图、OpenGraph 图片和来源卡，生成 RUN_DIR/asset-manifest.json。
+---
+
+# Asset Researcher
+
+> 路径约定：`RUN_DIR` 表示当前项目的 `<项目目录>/_runtime/<run-id>/`。`public/runtime/` 仅用于 Remotion 静态资源，不得作为项目中间产物目录。
+
+## 能解决什么问题
+
+把“文章直接进导演”改成“文章先找到证据素材，再进入导演”。它负责让视频画面不只靠模板图标和抽象卡片，而是能引用与事件相关的网页、产品页、报道页、官网页、截图或可读证据卡。
+
+这个 Skill 面向任意文章或事件，不是 GitHub 专用。公众号文章、新闻报道、行业分析、产品发布、财经事件、论文解读都要走同一套证据素材逻辑。
+
+## 输入
+
+```text
+文章正文或链接
+browser-evidence-capture 生成的来源文章、外部资料页、截图坐标或证据记录
+RUN_DIR/video-brief.json
+RUN_DIR/scenes.json
+用户对素材使用范围的要求
+```
+
+## 输出
+
+```text
+RUN_DIR/asset-manifest.json
+RUN_DIR/assets/
+```
+
+每个素材资产必须记录：
+
+```text
+id
+type
+role
+sourceUrl
+sourceTitle
+sourceDomain
+localPath
+fileName
+mimeType
+attribution
+usageRisk
+capture.method
+notes
+```
+
+`asset-manifest.json` 还必须写入 `evidenceRecords`，至少记录来源文章文本/HTML/摘录或外部资料页证据。正式模式下不能只生成无法追溯的抽象卡片。
+
+每个镜头绑定必须记录：
+
+```text
+sceneId
+assetIds
+reason
+narrationClaim
+targetRegion
+layoutZones
+```
+
+## 执行规则
+
+- 优先搜集与事件主体、产品、公司、数据来源、关键概念相关的网页。
+- 如果输入来自公众号，不默认使用公众号原文图片；优先去外部官网、报道页、产品页、数据页、公告页或搜索结果中寻找可验证素材。
+- 如果输入来自 GitHub 或开源项目，可以使用仓库页、README、文档和 Star 等元数据；如果输入不是 GitHub，不要强行套 Star、repo、README 结构。
+- 优先使用真实网页截图；其次使用网页 OpenGraph / Twitter 图片；最后才生成来源卡。
+- 不使用用户明确禁止的来源图片，例如用户要求不要用公众号原文图片时，必须绕开该来源的图片素材。
+- 素材不是装饰，必须能支撑某个 scene 的 `narrationClaim` 或 `visualGoal`。
+- `asset-manifest.json` 必须进入导演和渲染链路，不能只作为旁路文件。
+- `asset-manifest.json` 必须先于 `visual-manifest.json` 生成，让视觉清单基于真实素材和证据设计画面。
+- 每个镜头至少绑定一个素材资产或来源卡。
+- 版权、相关性和截图可读性必须在发布前复核。
+
+## 禁止事项
+
+- 不要把随机搜索图当作事实证据。
+- 不要用 AI 生成图伪造网页、产品界面、数据图或公司截图。
+- 不要把无法追溯来源的图片放入最终视频。
+- 不要让素材遮挡底部字幕。
+- 不要让同一张素材连续支撑多个不同观点，除非导演方案说明复用原因。

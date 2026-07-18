@@ -1,0 +1,8 @@
+{
+  "engineRoot": "/path/to/Shin-video",
+  "outputRoot": "/path/to/video-output",
+  "tts": {
+    "provider": "minimax",
+    "voiceId": "Chinese (Mandarin)_Reliable_Executive"
+  }
+}

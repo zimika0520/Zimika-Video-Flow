@@ -1,0 +1,36 @@
+---
+name: subtitle-rhythm-builder
+description: 根据 RUN_DIR/subtitle-timeline.json 中的 TTS 服务商原生时间戳整理 Shin-video 字幕节奏，修正断句过碎、停留过短、字幕过长等问题，并把结果合并进 RUN_DIR/scenes.json。
+---
+
+# 字幕节奏整理
+
+优化 `RUN_DIR/scenes.json` 里的字幕节奏。
+
+> 路径约定：`RUN_DIR` 表示当前项目的 `<项目目录>/_runtime/<run-id>/`。`public/runtime/` 仅用于 Remotion 静态资源，不得作为项目中间产物目录。
+
+## 目标
+
+让字幕看起来像短视频字幕，同时保持确认后的口播文案原意和最终音频时序。
+
+## 规则
+
+- 每条字幕尽量是一句完整意思。
+- 单条字幕不要过长。
+- 字幕停留时间不要太短。
+- 不要把语气词单独切成一条。
+- 不要破坏 TTS 服务商原生时间戳的整体时间顺序。
+- 字幕正文只取确认后的 `口播文案.md`，服务商返回文本仅可用于校验时间位置，不得覆盖正文。
+- 音频或口播文案变化后，旧 `RUN_DIR/subtitle-timeline.json` 立即失效。
+
+## 输出
+
+直接更新或生成带字幕节奏的：
+
+```text
+RUN_DIR/scenes.json
+```
+
+## 注意
+
+这个 Skill 不单独暴露给用户。它只是保证最终视频的观看体验。

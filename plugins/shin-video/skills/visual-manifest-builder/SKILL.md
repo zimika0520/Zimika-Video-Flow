@@ -1,0 +1,60 @@
+---
+name: visual-manifest-builder
+description: 为每个 scene 生成 RUN_DIR/visual-manifest.json，绑定画面目标、证据素材、字幕安全区、重叠风险和禁止复用规则。
+---
+
+# Visual Manifest Builder
+
+> 路径约定：`RUN_DIR` 表示当前项目的 `<项目目录>/_runtime/<run-id>/`。`public/runtime/` 仅用于 Remotion 静态资源，不得作为项目中间产物目录。
+
+## 能解决什么问题
+
+防止画面只执行抽象风格，导致 K 线、图标、背景和卡片反复套同一个模板。它让每个镜头在进入导演和 Remotion 前，都明确“为什么用这个画面”。
+
+## 输入
+
+```text
+RUN_DIR/video-brief.json
+RUN_DIR/scenes.json
+RUN_DIR/asset-manifest.json
+文章正文.md
+口播文案.md
+```
+
+## 输出
+
+```text
+RUN_DIR/visual-manifest.json
+```
+
+## 每个 scene 必填字段
+
+```text
+sceneId
+visualGoal
+evidenceAsset
+narrationClaim
+targetRegion
+safeZones
+overlapRisks
+forbiddenReuse
+whyThisVisual
+```
+
+## 生成规则
+
+- `visualGoal` 必须说明主画面要解释什么，不允许复读完整字幕。
+- `narrationClaim` 必须对应口播文案中的本段主张。
+- `evidenceAsset` 必须能支撑画面 claim；没有素材时写明需要补什么素材。
+- 必须优先读取 `RUN_DIR/asset-manifest.json` 的素材绑定和 `evidenceRecords`，不能在没有证据上下文时凭空设计画面。
+- `safeZones.subtitle` 固定为 `bottom`。
+- `safeZones.mainVisualAvoidsSubtitle` 必须为 true。
+- `overlapRisks` 至少检查字幕、标题、图表、素材裁切和高密度数据区域。
+- `forbiddenReuse` 必须写出本条视频不能复用的旧模板、图标、K线或背景套路。
+
+## 禁止事项
+
+- 不要让主画面重复完整口播字幕。
+- 不要连续多个 scene 使用同一图表模板。
+- 不要把证据素材当装饰图。
+- 不要把所有 targetRegion 都写成同一个位置。

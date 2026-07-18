@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 192" role="img" aria-label="Shin-video">
+  <rect x="8" y="8" width="176" height="176" rx="40" fill="#FF7A4F"/>
+  <path d="M58 61c0-10 11-17 20-12l75 43c9 5 9 18 0 23l-75 43c-9 5-20-2-20-12V61Z" fill="#181513"/>
+  <path d="M84 77c0-5 6-8 10-6l40 23c4 2 4 7 0 9l-40 23c-4 2-10-1-10-6V77Z" fill="#FF7A4F"/>
+  <text x="218" y="115" fill="#FFF8F2" font-family="Arial, sans-serif" font-size="72" font-weight="700">Shin-video</text>
+</svg>

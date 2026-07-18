@@ -1,0 +1,51 @@
+{
+  "name": "shin-video",
+  "version": "0.1.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "check": "npm run test && npm run build",
+    "doctor": "tsx scripts/doctor.ts",
+    "production-gate": "tsx scripts/production-gate.ts",
+    "shin-video:lite": "tsx scripts/shin-video-lite.ts",
+    "verify-delivery": "node scripts/validate-delivery-polish.mjs",
+    "verify-workflow": "npm run doctor && npm run verify-skill-visual-gate && npm run verify-delivery && npm run test && npm run build",
+    "verify-skill-visual-gate": "node scripts/validate-skill-visual-gate.mjs",
+    "remotion:studio": "remotion studio remotion/index.ts",
+    "render:preview": "tsx scripts/render-preview.ts preview",
+    "render:final": "tsx scripts/render-preview.ts final",
+    "render:visual-samples": "tsx scripts/render-visual-samples.ts",
+    "test:illustrated-scene": "tsx scripts/test-illustrated-scene.ts"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.484",
+    "@remotion/cli": "4.0.484",
+    "@remotion/effects": "^4.0.484",
+    "@remotion/paths": "^4.0.484",
+    "@remotion/renderer": "4.0.484",
+    "@remotion/shapes": "^4.0.484",
+    "@remotion/transitions": "^4.0.484",
+    "lucide-react": "^0.468.0",
+    "next": "^15.1.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "4.0.484",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.4",
+    "@types/react-dom": "^19.0.2",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^15.1.4",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

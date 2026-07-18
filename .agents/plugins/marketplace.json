@@ -1,0 +1,20 @@
+{
+  "name": "shin-video",
+  "interface": {
+    "displayName": "Shin-video"
+  },
+  "plugins": [
+    {
+      "name": "shin-video",
+      "source": {
+        "source": "local",
+        "path": "./plugins/shin-video"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

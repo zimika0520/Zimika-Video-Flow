@@ -1,0 +1,283 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f7f8f6;
+  --foreground: #182033;
+  --muted: #687386;
+  --border: rgba(30, 43, 66, 0.11);
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel-strong: rgba(255, 255, 255, 0.94);
+  --ink: #151c2f;
+  --electric: #2563eb;
+  --electric-soft: rgba(37, 99, 235, 0.08);
+  --amber: #e6a01b;
+  --mint: #0f9f80;
+  --rose: #e46c77;
+  --danger: #d92d20;
+  --warning: #f79009;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(120deg, rgba(37, 99, 235, 0.06), transparent 26%),
+    linear-gradient(250deg, rgba(15, 159, 128, 0.07), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, var(--background) 58%, #eef2f7 100%);
+  color: var(--foreground);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(22, 119, 255, 0.22);
+  color: #ffffff;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid rgba(22, 119, 255, 0.45);
+  outline-offset: 2px;
+}
+
+textarea,
+select {
+  font: inherit;
+}
+
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
+
+.glass-panel {
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--panel-strong), var(--panel));
+  box-shadow: 0 18px 48px rgba(24, 32, 51, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.hairline-grid {
+  background-image:
+    linear-gradient(rgba(30, 43, 66, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 43, 66, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.editor-shell {
+  border: 1px solid rgba(30, 43, 66, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 26px 80px rgba(24, 32, 51, 0.08);
+  backdrop-filter: blur(20px);
+}
+
+.tool-button {
+  display: inline-flex;
+  height: 36px;
+  width: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(30, 43, 66, 0.1);
+  background: rgba(255, 255, 255, 0.78);
+  color: #4f5d73;
+  transition: all 160ms ease;
+}
+
+.tool-button:hover {
+  border-color: rgba(37, 99, 235, 0.24);
+  background: #ffffff;
+  color: var(--electric);
+  box-shadow: 0 10px 24px rgba(24, 32, 51, 0.08);
+}
+
+.preview-anim-fade {
+  animation: previewFade 1100ms ease both;
+}
+
+.preview-anim-slide-up {
+  animation: previewSlideUp 900ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.preview-anim-pop {
+  animation: previewPop 900ms cubic-bezier(0.18, 1.25, 0.24, 1) both;
+}
+
+.preview-anim-wipe {
+  animation: previewWipe 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.preview-anim-zoom-in,
+.preview-anim-camera-push {
+  animation: previewZoomIn 1200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.preview-anim-camera-pull {
+  animation: previewCameraPull 1200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.preview-anim-typewriter {
+  animation: previewFade 600ms ease both;
+  clip-path: inset(0 0 0 0);
+}
+
+.preview-anim-number-tick {
+  animation: previewNumberTick 950ms ease both;
+}
+
+.preview-anim-underline-sweep {
+  position: relative;
+  animation: previewFade 700ms ease both;
+}
+
+.preview-anim-underline-sweep::after {
+  position: absolute;
+  right: 8%;
+  bottom: 8%;
+  left: 8%;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+  opacity: 0.35;
+  animation: previewUnderline 1100ms ease both;
+}
+
+.preview-anim-pulse-outline {
+  animation: previewPulseOutline 1200ms ease both;
+}
+
+.preview-anim-flash-cut {
+  animation: previewFlashCut 780ms ease both;
+}
+
+.preview-anim-card-flip {
+  animation: previewCardFlip 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-style: preserve-3d;
+}
+
+@keyframes previewFade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes previewSlideUp {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+}
+
+@keyframes previewPop {
+  0% {
+    opacity: 0;
+    scale: 0.92;
+  }
+  72% {
+    scale: 1.03;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+@keyframes previewWipe {
+  from {
+    clip-path: inset(0 100% 0 0 round 18px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 18px);
+  }
+}
+
+@keyframes previewZoomIn {
+  from {
+    opacity: 0;
+    scale: 0.94;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes previewCameraPull {
+  from {
+    opacity: 0;
+    scale: 1.08;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes previewNumberTick {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  34% {
+    translate: 0 -5px;
+  }
+  68% {
+    translate: 0 3px;
+  }
+}
+
+@keyframes previewUnderline {
+  from {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  to {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+@keyframes previewPulseOutline {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.28);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(37, 99, 235, 0);
+  }
+}
+
+@keyframes previewFlashCut {
+  0% {
+    filter: brightness(1.8);
+    opacity: 0;
+  }
+  30% {
+    filter: brightness(1.35);
+    opacity: 1;
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
+@keyframes previewCardFlip {
+  from {
+    opacity: 0;
+    rotate: 0 1 0 -18deg;
+  }
+  to {
+    opacity: 1;
+    rotate: 0 1 0 0deg;
+  }
+}

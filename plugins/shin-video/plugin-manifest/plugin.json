@@ -1,0 +1,23 @@
+{
+  "name": "shin-video",
+  "version": "0.1.1",
+  "description": "将文章或链接组织为带口播、字幕、外部素材、导演方案和 Remotion 成片的本地视频工作流。",
+  "author": {
+    "name": "Shinchan-crayon",
+    "url": "https://github.com/Shinchan-crayon"
+  },
+  "homepage": "https://github.com/Shinchan-crayon/Shin-video",
+  "repository": "https://github.com/Shinchan-crayon/Shin-video",
+  "skills": "../skills/",
+  "interface": {
+    "displayName": "Shin-video 总导演",
+    "shortDescription": "文章进，导演方案、素材、口播、字幕和本地成片出。",
+    "longDescription": "兼容发布清单。实际插件入口见 .codex-plugin/plugin.json。",
+    "developerName": "Shinchan-crayon",
+    "category": "Productivity",
+    "capabilities": ["Guided workflow", "Local rendering", "Video production"],
+    "composerIcon": "../assets/icon.svg",
+    "logo": "../assets/logo.svg",
+    "logoDark": "../assets/logo-dark.svg"
+  }
+}
