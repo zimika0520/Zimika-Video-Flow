@@ -12,6 +12,7 @@ import {
   defaultStyleProfile,
   type DirectorQualityTargets,
   type RuntimeAssetManifest,
+  type RuntimeDirectorPlan,
   type Scene,
 } from "@/lib/types";
 import { buildRuntimeVideoBrief } from "@/lib/video-brief";
@@ -72,6 +73,7 @@ const scenes: Scene[] = [
     content: { headline: "第一句" },
     components: ["HeroTitle"],
     shotStyle: "Burst",
+    animation: { cameraMotion: "dollyIn" },
   },
   {
     id: "scene-2",
@@ -100,6 +102,7 @@ const scenes: Scene[] = [
     content: { headline: "增长", metrics: [{ label: "增长", value: "20倍" }] },
     components: ["MetricCard", "MetricCounter"],
     shotStyle: "Reveal",
+    animation: { cameraMotion: "pushIn" },
   },
   {
     id: "scene-3",
@@ -131,6 +134,7 @@ const scenes: Scene[] = [
     },
     components: ["NodeGraph"],
     shotStyle: "Flow",
+    animation: { cameraMotion: "panLeft" },
   },
   {
     id: "scene-4",
@@ -151,6 +155,7 @@ const scenes: Scene[] = [
     content: { headline: "结论", summaryItems: ["结论"] },
     components: ["SummaryCard"],
     shotStyle: "Collapse",
+    animation: { cameraMotion: "dollyOut" },
   },
 ];
 const existingAudioPath = fileURLToPath(import.meta.url);
@@ -267,6 +272,7 @@ const buildGateReport = (
   inputScenes: Scene[],
   assetManifestOverride?: RuntimeAssetManifest,
   qualityTargetsOverride?: DirectorQualityTargets,
+  directorPlanOverride?: RuntimeDirectorPlan,
 ) => {
   const bounds = buildDirectorQualityBounds(inputScenes.length);
   const directorQualityTargets = qualityTargetsOverride ?? {
@@ -283,12 +289,14 @@ const buildGateReport = (
   });
   const visualManifest = buildVisualManifestFromScenes(inputScenes);
   const assetManifest = assetManifestOverride ?? buildAssetManifest(inputScenes);
-  const directorPlan = buildRuntimeDirectorPlan({
-    scenes: inputScenes,
-    videoBrief,
-    visualManifest,
-    directorQualityTargets,
-  });
+  const directorPlan =
+    directorPlanOverride ??
+    buildRuntimeDirectorPlan({
+      scenes: inputScenes,
+      videoBrief,
+      visualManifest,
+      directorQualityTargets,
+    });
   return validateProductionGate({
     scenes: inputScenes,
     captions: inputScenes.map((scene) => ({
@@ -312,6 +320,126 @@ describe("production gate", () => {
 
     expect(report.errors).toEqual([]);
     expect(report.passed).toBe(true);
+  });
+
+  test("blocks when every factual scene asset binding is empty", () => {
+    const assetManifest = buildAssetManifest(scenes);
+    assetManifest.sceneBindings.forEach((binding) => {
+      binding.assetIds = [];
+    });
+
+    const report = buildGateReport(scenes, assetManifest);
+
+    expect(report.passed).toBe(false);
+    expect(report.errors.join("\n")).toContain("所有事实镜头素材绑定为空");
+  });
+
+  test.each([
+    ["directorType", (scene: RuntimeDirectorPlan["scenes"][number]) => {
+      scene.directorType = undefined;
+    }],
+    ["rendererFamily", (scene: RuntimeDirectorPlan["scenes"][number]) => {
+      scene.rendererFamily = undefined;
+    }],
+    ["visualTreatment", (scene: RuntimeDirectorPlan["scenes"][number]) => {
+      scene.visualTreatment = undefined;
+    }],
+    ["shotStyle", (scene: RuntimeDirectorPlan["scenes"][number]) => {
+      scene.shotStyle = undefined;
+    }],
+    ["animation.cameraMotion", (scene: RuntimeDirectorPlan["scenes"][number]) => {
+      scene.animation = {};
+    }],
+    ["components", (scene: RuntimeDirectorPlan["scenes"][number]) => {
+      scene.components = [];
+    }],
+  ])("blocks an empty director execution field: %s", (field, removeField) => {
+    const directorPlan = buildRuntimeDirectorPlan({ scenes });
+    removeField(directorPlan.scenes[0]);
+
+    const report = buildGateReport(scenes, undefined, undefined, directorPlan);
+
+    expect(report.passed).toBe(false);
+    expect(report.errors.join("\n")).toContain(
+      `scene-1 导演执行字段缺失或为空：${field}`,
+    );
+  });
+
+  test("blocks three consecutive scenes with the same visual structure", () => {
+    const repeatedStructure = Array.from({ length: 3 }, (_, index): Scene => ({
+      ...scenes[0],
+      id: `same-structure-${index + 1}`,
+      start: index * 3,
+      end: (index + 1) * 3,
+      directorType: "KeywordInvestigation",
+      rendererFamily: "evidence",
+      visualTreatment:
+        index % 2 === 0 ? "keyword-investigation" : "keyword-cutaway",
+      shotStyle: index % 2 === 0 ? "Reveal" : "Split",
+      components: [
+        "EvidenceDataSplit",
+        "TwoKeywordInvestigation",
+        "CautionBadge",
+      ],
+      animation: {
+        cameraMotion: index % 2 === 0 ? "dollyIn" : "panLeft",
+      },
+    }));
+
+    const report = buildGateReport(repeatedStructure);
+
+    expect(report.passed).toBe(false);
+    expect(report.errors.join("\n")).toContain(
+      "连续 3 个镜头使用了相同视觉结构",
+    );
+  });
+
+  test("allows two matching structures and non-consecutive reuse", () => {
+    const reusable = [
+      ...Array.from({ length: 2 }, (_, index): Scene => ({
+        ...scenes[0],
+        id: `reusable-${index + 1}`,
+        start: index * 3,
+        end: (index + 1) * 3,
+        directorType: "KeywordInvestigation",
+        rendererFamily: "evidence",
+        visualTreatment:
+          index === 0 ? "keyword-investigation" : "keyword-cutaway",
+        components: [
+          "EvidenceDataSplit",
+          "TwoKeywordInvestigation",
+          "CautionBadge",
+        ],
+        animation: { cameraMotion: "dollyIn" },
+      })),
+      {
+        ...scenes[2],
+        id: "reusable-break",
+        start: 6,
+        end: 9,
+      },
+      {
+        ...scenes[0],
+        id: "reusable-return",
+        start: 9,
+        end: 12,
+        directorType: "KeywordInvestigation" as const,
+        rendererFamily: "evidence" as const,
+        visualTreatment: "keyword-investigation" as const,
+        components: [
+          "EvidenceDataSplit",
+          "TwoKeywordInvestigation",
+          "CautionBadge",
+        ],
+        animation: { cameraMotion: "dollyIn" as const },
+      },
+    ];
+
+    const report = buildGateReport(reusable);
+
+    expect(report.errors.join("\n")).not.toContain(
+      "连续 3 个镜头使用了相同视觉结构",
+    );
   });
 
   test("blocks only missing render-critical inputs", () => {

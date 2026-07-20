@@ -274,11 +274,21 @@ export const buildDirectorQualityBounds = (sceneCount: number) => {
 const visualForm = (candidate: DirectorCandidate): string =>
   `${candidate.rendererFamily}:${candidate.visualTreatment}`;
 
+const visualStructure = (
+  candidate: Pick<DirectorCandidate, "rendererFamily"> & {
+    components: string[];
+  },
+): string =>
+  `${candidate.rendererFamily}:${[
+    ...new Set(candidate.components),
+  ].sort().join(",")}`;
+
 type LegalCandidate = DirectorCandidate & {
   content: DirectorSceneContent;
   components: string[];
   formIndex: number;
   familyIndex: number;
+  structureIndex: number;
 };
 
 const bitCount = (value: bigint): number => {
@@ -300,6 +310,9 @@ export const buildDirectorSearchStateKey = (
   requiredFamilies: number,
   formUniverseSize: number,
   familyUniverseSize: number,
+  previousStructureIndex = -1,
+  penultimateStructureIndex = -1,
+  structureUniverseSize = 0,
 ): bigint => {
   const formState =
     bitCount(usedForms) >= requiredForms
@@ -315,10 +328,19 @@ export const buildDirectorSearchStateKey = (
   key =
     (key << BigInt(formUniverseSize + 1)) |
     formState;
-  return (
+  key =
     (key << BigInt(familyUniverseSize + 1)) |
-    familyState
-  );
+    familyState;
+  if (structureUniverseSize > 0) {
+    const structureBase = BigInt(structureUniverseSize + 1);
+    key =
+      key * structureBase +
+      BigInt(previousStructureIndex + 1);
+    key =
+      key * structureBase +
+      BigInt(penultimateStructureIndex + 1);
+  }
+  return key;
 };
 
 const invalidSelection = (
@@ -463,6 +485,7 @@ export const selectDirectorPlan = (
         const components = deriveDirectorComponents(
           candidate.type,
           content,
+          candidate.visualTreatment,
         );
         const contract = validateDirectorContract({
           scene: {
@@ -502,11 +525,22 @@ export const selectDirectorPlan = (
   const familyIndexes = new Map(
     allFamilies.map((family, index) => [family, index]),
   );
+  const allStructures = [
+    ...new Set(
+      rawCandidateSets.flatMap((set) =>
+        set.map((candidate) => visualStructure(candidate)),
+      ),
+    ),
+  ];
+  const structureIndexes = new Map(
+    allStructures.map((structure, index) => [structure, index]),
+  );
   const candidateSets: LegalCandidate[][] = rawCandidateSets.map((set) =>
     set.map((candidate) => ({
       ...candidate,
       formIndex: formIndexes.get(visualForm(candidate))!,
       familyIndex: familyIndexes.get(candidate.rendererFamily)!,
+      structureIndex: structureIndexes.get(visualStructure(candidate))!,
     })),
   );
 
@@ -551,6 +585,7 @@ export const selectDirectorPlan = (
     options.maxSearchMilliseconds ?? DEFAULT_MAX_SEARCH_MILLISECONDS;
   const searchStartedAt = Date.now();
   const searchDeadline = searchStartedAt + maxSearchMilliseconds;
+  const firstFeasibleOnly = scenes.length >= 15;
   let visitedStates = 0;
   const searchCache = new Map<string, SearchOutcome>();
   const provenUnreachable = {
@@ -582,6 +617,8 @@ export const selectDirectorPlan = (
       previousFormIndex: number,
       usedForms: bigint,
       usedFamilies: bigint,
+      previousStructureIndex: number,
+      penultimateStructureIndex: number,
     ): MemoEntry | typeof budgetExhausted => {
       if (Date.now() >= searchDeadline) return budgetExhausted;
 
@@ -622,6 +659,9 @@ export const selectDirectorPlan = (
         requiredFamilies,
         allForms.length,
         allFamilies.length,
+        previousStructureIndex,
+        penultimateStructureIndex,
+        allStructures.length,
       );
       const cachedState = memo.get(stateKey);
       if (cachedState) return cachedState;
@@ -636,6 +676,12 @@ export const selectDirectorPlan = (
       ) {
         const candidate = candidateSets[index][choiceIndex];
         if (candidate.formIndex === previousFormIndex) continue;
+        if (
+          candidate.structureIndex === previousStructureIndex &&
+          candidate.structureIndex === penultimateStructureIndex
+        ) {
+          continue;
+        }
         const semanticUpperBound =
           candidate.semanticScore + suffixSemanticUpperBounds[index + 1];
         const narrativeUpperBound =
@@ -654,6 +700,8 @@ export const selectDirectorPlan = (
           candidate.formIndex,
           usedForms | (1n << BigInt(candidate.formIndex)),
           usedFamilies | (1n << BigInt(candidate.familyIndex)),
+          candidate.structureIndex,
+          previousStructureIndex,
         );
         if (suffix.status === "BUDGET_EXHAUSTED") return suffix;
         if (suffix.status === "PROVEN_UNREACHABLE") continue;
@@ -674,6 +722,13 @@ export const selectDirectorPlan = (
             narrativeScore,
             choiceIndex,
           };
+          if (
+            firstFeasibleOnly ||
+            best.semanticScore === suffixSemanticUpperBounds[index] &&
+            best.narrativeScore === suffixNarrativeUpperBounds[index]
+          ) {
+            break;
+          }
         }
       }
 
@@ -682,7 +737,7 @@ export const selectDirectorPlan = (
       return result;
     };
 
-    const root = visit(0, -1, 0n, 0n);
+    const root = visit(0, -1, 0n, 0n, -1, -1);
     if (root.status === "BUDGET_EXHAUSTED") return budgetExhausted;
     if (root.status === "PROVEN_UNREACHABLE") {
       searchCache.set(cacheKey, provenUnreachable);
@@ -694,12 +749,16 @@ export const selectDirectorPlan = (
     let previousFormIndex = -1;
     let usedForms = 0n;
     let usedFamilies = 0n;
+    let previousStructureIndex = -1;
+    let penultimateStructureIndex = -1;
     for (let index = 0; index < scenes.length; index += 1) {
       const candidate = candidateSets[index][entry.choiceIndex];
       candidates.push(candidate);
       previousFormIndex = candidate.formIndex;
       usedForms |= 1n << BigInt(candidate.formIndex);
       usedFamilies |= 1n << BigInt(candidate.familyIndex);
+      penultimateStructureIndex = previousStructureIndex;
+      previousStructureIndex = candidate.structureIndex;
       if (index === scenes.length - 1) break;
 
       const nextKey = buildDirectorSearchStateKey(
@@ -711,6 +770,9 @@ export const selectDirectorPlan = (
         requiredFamilies,
         allForms.length,
         allFamilies.length,
+        previousStructureIndex,
+        penultimateStructureIndex,
+        allStructures.length,
       );
       const nextEntry = memo.get(nextKey);
       if (!nextEntry || nextEntry.status !== "FOUND") {

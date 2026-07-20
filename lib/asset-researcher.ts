@@ -345,6 +345,43 @@ const readableTextFromHtml = (html: string): string =>
       .replace(/&quot;/g, "\""),
   );
 
+export const assessResearchPageQuality = ({
+  html,
+  pageUrl,
+  queryTerms,
+}: {
+  html: string;
+  pageUrl: string;
+  queryTerms: string[];
+}): { usable: boolean; title: string; reason?: string } => {
+  const { title } = extractPageMeta(html, pageUrl);
+  const readableText = readableTextFromHtml(html);
+  const pageText = normalize(`${title} ${readableText}`).toLocaleLowerCase();
+  const blockedPagePattern =
+    /\b404\b|页面不存在|网页不存在|账号登录|请登录|登录后继续|安全验证|验证码|访问过于频繁|人机验证|captcha/i;
+
+  if (blockedPagePattern.test(pageText)) {
+    return { usable: false, title, reason: "error-or-access-gate" };
+  }
+  if (readableText.length < 80) {
+    return { usable: false, title, reason: "insufficient-readable-content" };
+  }
+
+  const normalizedTerms = queryTerms
+    .flatMap((term) => [term, ...term.split(/[、，,；;：:\s/]+/g)])
+    .map((term) => normalize(term).toLocaleLowerCase())
+    .filter((term) => term.length >= 2);
+  const hasRelevantTerm =
+    normalizedTerms.length === 0 ||
+    normalizedTerms.some((term) => pageText.includes(term));
+
+  if (!hasRelevantTerm) {
+    return { usable: false, title, reason: "query-mismatch" };
+  }
+
+  return { usable: true, title };
+};
+
 const splitEvidenceSentences = (text: string): string[] =>
   readableTextFromHtml(text)
     .split(/(?<=[。！？!?；;])|\n/g)
@@ -771,6 +808,12 @@ export const researchAssets = async ({
     if (assets.length >= maxAssets) break;
     const html = await fetchText(pageUrl);
     if (!html) continue;
+    const pageQuality = assessResearchPageQuality({
+      html,
+      pageUrl,
+      queryTerms,
+    });
+    if (!pageQuality.usable) continue;
     const meta = extractPageMeta(html, pageUrl);
     let captured = false;
     if (chromePath) {

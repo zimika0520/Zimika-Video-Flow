@@ -29,6 +29,12 @@ const formOf = (item: {
   visualTreatment?: DirectorVisualTreatment;
 }): string => `${item.rendererFamily}:${item.visualTreatment}`;
 
+const structureOf = (item: {
+  rendererFamily?: string;
+  components?: string[];
+}): string =>
+  `${item.rendererFamily}:${[...new Set(item.components ?? [])].sort().join(",")}`;
+
 const highCandidateSubtitle =
   "DeepSeek 绕不开两条路：一条是英伟达，一条是国产替代芯片。" +
   "制程、HBM、软件生态、流片和量产，每一关都很硬。" +
@@ -183,6 +189,32 @@ describe("selectDirectorPlan", () => {
       buildStateKey(5, 4, 3n, 28n, 2, 4, 3, 5),
     ).not.toBe(
       buildStateKey(5, 4, 3n, 29n, 2, 4, 3, 5),
+    );
+  });
+
+  test("keeps recent visual structures distinct in the search memo key", () => {
+    const buildStateKey = (
+      directorSelectorModule as unknown as {
+        buildDirectorSearchStateKey: (
+          index: number,
+          previousFormIndex: number,
+          usedForms: bigint,
+          usedFamilies: bigint,
+          requiredForms: number,
+          requiredFamilies: number,
+          formUniverseSize: number,
+          familyUniverseSize: number,
+          previousStructureIndex?: number,
+          penultimateStructureIndex?: number,
+          structureUniverseSize?: number,
+        ) => bigint;
+      }
+    ).buildDirectorSearchStateKey;
+
+    expect(
+      buildStateKey(5, 4, 3n, 3n, 2, 2, 5, 5, 2, 1, 4),
+    ).not.toBe(
+      buildStateKey(5, 4, 3n, 3n, 2, 2, 5, 5, 2, 0, 4),
     );
   });
 
@@ -521,6 +553,19 @@ describe("selectDirectorPlan", () => {
     const result = selectDirectorPlan(inputs);
 
     expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error(result.errors.join("\n"));
+    const structures = result.scenes.map(structureOf);
+    for (let index = 2; index < structures.length; index += 1) {
+      expect([
+        structures[index - 2],
+        structures[index - 1],
+        structures[index],
+      ]).not.toEqual([
+        structures[index],
+        structures[index],
+        structures[index],
+      ]);
+    }
   });
 
   test("fails closed without lowering targets when the search budget is exhausted", () => {

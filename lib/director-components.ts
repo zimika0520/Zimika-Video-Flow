@@ -2,6 +2,7 @@ import { directorCapabilities } from "./director-capabilities";
 import type {
   DirectorSceneContent,
   DirectorSceneType,
+  DirectorVisualTreatment,
 } from "./types";
 
 type ComponentDeriver = (content: DirectorSceneContent) => string[];
@@ -498,6 +499,7 @@ const componentDerivers: Record<DirectorSceneType, ComponentDeriver> = {
 export const deriveDirectorComponents = (
   directorType: DirectorSceneType,
   content: DirectorSceneContent,
+  visualTreatment?: DirectorVisualTreatment,
 ): string[] => {
   if (
     !Object.prototype.hasOwnProperty.call(componentDerivers, directorType) ||
@@ -512,6 +514,17 @@ export const deriveDirectorComponents = (
     capability.validateContent(content).length > 0
   ) {
     return [];
+  }
+
+  if (
+    directorType === "KeywordInvestigation" &&
+    visualTreatment === "keyword-cutaway"
+  ) {
+    return [
+      "KeywordCutawayFocus",
+      "FactBoundaryStrip",
+      "AuxiliaryAnnotation",
+    ];
   }
 
   return [...new Set(componentDerivers[directorType](content))];

@@ -359,7 +359,11 @@ describe("generateScenes", () => {
       scene.directorType !== undefined &&
       scene.content !== undefined &&
       JSON.stringify(scene.components) === JSON.stringify(
-        deriveDirectorComponents(scene.directorType, scene.content),
+        deriveDirectorComponents(
+          scene.directorType,
+          scene.content,
+          scene.visualTreatment,
+        ),
       ),
     )).toBe(true);
     expect(finance.scenes.every((scene) => scene.directorContractIssues?.length === 0)).toBe(true);
@@ -378,7 +382,11 @@ describe("generateScenes", () => {
       scene.directorType !== undefined &&
       scene.content !== undefined &&
       JSON.stringify(scene.components) === JSON.stringify(
-        deriveDirectorComponents(scene.directorType, scene.content),
+        deriveDirectorComponents(
+          scene.directorType,
+          scene.content,
+          scene.visualTreatment,
+        ),
       ),
     )).toBe(true);
     expect(chip.scenes.every((scene) => scene.directorContractIssues?.length === 0)).toBe(true);

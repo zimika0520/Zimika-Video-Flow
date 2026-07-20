@@ -84,6 +84,31 @@ const getMiniMaxSubtitleItems = (payload: unknown): unknown[] => {
   return [];
 };
 
+const discardInvalidSourceOffsets = (timings: TtsTimingUnit[]): TtsTimingUnit[] => {
+  let previousSourceEnd: number | undefined;
+  let valid = true;
+
+  for (const timing of timings) {
+    const { sourceStart, sourceEnd } = timing;
+    if (
+      sourceStart === undefined
+      || sourceEnd === undefined
+      || !Number.isInteger(sourceStart)
+      || !Number.isInteger(sourceEnd)
+      || sourceStart < 0
+      || sourceEnd <= sourceStart
+      || (previousSourceEnd !== undefined && sourceStart < previousSourceEnd)
+    ) {
+      valid = false;
+      break;
+    }
+    previousSourceEnd = sourceEnd;
+  }
+
+  if (valid) return timings;
+  return timings.map(({ sourceStart: _sourceStart, sourceEnd: _sourceEnd, ...timing }) => timing);
+};
+
 const normalizeMiniMaxSubtitles = (payload: unknown): TtsTimingUnit[] => {
   const subtitles = getMiniMaxSubtitleItems(payload);
   if (subtitles.length === 0) return [];
@@ -148,8 +173,9 @@ const normalizeMiniMaxSubtitles = (payload: unknown): TtsTimingUnit[] => {
     }];
   });
 
-  validateTtsTimingUnits(timings);
-  return timings;
+  const normalizedTimings = discardInvalidSourceOffsets(timings);
+  validateTtsTimingUnits(normalizedTimings);
+  return normalizedTimings;
 };
 
 const redactSecret = (message: string, secret: string): string =>

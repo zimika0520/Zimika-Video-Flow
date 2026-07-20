@@ -104,6 +104,26 @@ describe("buildDirectorContent", () => {
     expect(content.headline).not.toContain("整片天空一起装进了画面");
   });
 
+  test.each([
+    [
+      "这款智能体在五月二十日深夜上线。两天后，第一批用户开始测试。",
+      "这款智能体在五月二十日深夜上线",
+    ],
+    [
+      "找发票、查照片、清理磁盘、诊断软件故障，这些动作都可以在本地完成。",
+      "找发票、查照片、清理磁盘",
+    ],
+    [
+      "简单而高频的动作留在本地。复杂规划交给云端模型。",
+      "简单而高频的动作留在本地",
+    ],
+  ])("keeps Chinese display headlines on complete phrase boundaries", (subtitle, expected) => {
+    const content = build(subtitle, "Hero");
+
+    expect(content.headline).toBe(expected);
+    expect(content.headline).not.toBe(subtitle.replace(/[。！？!?]$/, ""));
+  });
+
   test("builds explicit system layers without decorative labels", () => {
     const content = build(
       "请求经过模型、API、推理服务，最后进入芯片执行。",

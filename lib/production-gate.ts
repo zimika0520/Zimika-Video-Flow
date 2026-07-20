@@ -35,6 +35,16 @@ const add = (items: string[], condition: unknown, message: string): void => {
   if (!condition) items.push(message);
 };
 
+const hasText = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
+const directorStructure = (
+  scene: RuntimeDirectorPlan["scenes"][number],
+): string =>
+  `${scene.rendererFamily ?? ""}:${[
+    ...new Set(scene.components ?? []),
+  ].sort().join(",")}`;
+
 export const validateProductionGate = (input: ProductionGateInput): ProductionGateReport => {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -72,6 +82,53 @@ export const validateProductionGate = (input: ProductionGateInput): ProductionGa
     } catch (error) {
       errors.push((error as Error).message);
     }
+
+    for (const scene of input.directorPlan.scenes) {
+      const requiredFields: Array<[string, boolean]> = [
+        ["directorType", hasText(scene.directorType)],
+        ["rendererFamily", hasText(scene.rendererFamily)],
+        ["visualTreatment", hasText(scene.visualTreatment)],
+        ["shotStyle", hasText(scene.shotStyle)],
+        [
+          "animation.cameraMotion",
+          hasText(scene.animation?.cameraMotion),
+        ],
+        [
+          "components",
+          Array.isArray(scene.components) && scene.components.length > 0,
+        ],
+      ];
+      requiredFields.forEach(([field, valid]) => {
+        add(
+          errors,
+          valid,
+          `${scene.id} 导演执行字段缺失或为空：${field}`,
+        );
+      });
+    }
+
+    for (let index = 2; index < input.directorPlan.scenes.length; index += 1) {
+      const signature = directorStructure(input.directorPlan.scenes[index]);
+      if (
+        signature === directorStructure(input.directorPlan.scenes[index - 1]) &&
+        signature === directorStructure(input.directorPlan.scenes[index - 2])
+      ) {
+        errors.push(
+          `连续 3 个镜头使用了相同视觉结构：${input.directorPlan.scenes[index - 2].id}、${input.directorPlan.scenes[index - 1].id}、${input.directorPlan.scenes[index].id}`,
+        );
+        break;
+      }
+    }
+  }
+
+  if (
+    input.assetManifest?.sceneBindings.length &&
+    input.assetManifest.sceneBindings.every(
+      (binding) =>
+        !Array.isArray(binding.assetIds) || binding.assetIds.length === 0,
+    )
+  ) {
+    errors.push("所有事实镜头素材绑定为空，不能进入渲染");
   }
 
   errors.forEach((message, index) => {

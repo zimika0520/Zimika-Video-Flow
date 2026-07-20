@@ -4416,6 +4416,157 @@ const DirectorCompositionBoundary = ({
   );
 };
 
+const KeywordCutawayFrame = ({
+  scene,
+  theme,
+}: {
+  scene: Scene;
+  theme: Theme;
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const visualTheme = toVisualTheme(theme);
+  const tags = contentStringList(scene, ["keywordTags"], 2);
+  const facts = contentStringList(
+    scene,
+    ["factBoundary", "evidenceKeywords"],
+    3,
+  );
+  const mainLine = directorMainText(scene, 14)[0] ?? "关键判断";
+  const keyword = tags[0] ?? mainLine;
+  const annotation = tags[1] ?? facts[0] ?? "先确认事实边界";
+  const factItems = facts.length > 0 ? facts : ["主画面解释观点，不复读口播"];
+  const enter = interpolate(frame, [0, 0.55 * fps], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.bezier(0.16, 1, 0.3, 1),
+  });
+  const keywordScale = spring({
+    frame,
+    fps,
+    durationInFrames: Math.round(0.8 * fps),
+    config: { damping: 16, stiffness: 126, mass: 0.82 },
+  });
+  const scan = interpolate(frame, [0.3 * fps, 1.25 * fps], [-25, 125], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.inOut(Easing.cubic),
+  });
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        border: `1px solid ${theme.line}`,
+        background: `${theme.panel}dc`,
+        boxShadow: theme.shadow,
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          opacity: 0.28,
+          backgroundImage: `linear-gradient(${theme.line} 1px, transparent 1px), linear-gradient(90deg, ${theme.line} 1px, transparent 1px)`,
+          backgroundSize: "48px 48px",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          left: `${scan}%`,
+          width: 120,
+          transform: "skewX(-12deg)",
+          background: `linear-gradient(90deg, transparent, ${theme.accent}33, transparent)`,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: 42,
+          right: 42,
+          top: 42,
+          bottom: 220,
+          display: "grid",
+          placeItems: "center",
+          opacity: enter,
+          transform: `scale(${0.82 + keywordScale * 0.18})`,
+        }}
+      >
+        <div style={{ position: "relative", textAlign: "center" }}>
+          <div
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              width: 360,
+              height: 360,
+              borderRadius: "50%",
+              border: `2px solid ${theme.primary}55`,
+              transform: `translate(-50%, -50%) scale(${0.9 + enter * 0.1})`,
+              boxShadow: `inset 0 0 0 22px ${theme.primary}0d`,
+            }}
+          />
+          <div
+            style={{
+              position: "relative",
+              maxWidth: 700,
+              color: theme.ink,
+              fontSize: fitChineseText(keyword, 112, 7, 58),
+              lineHeight: 0.96,
+              fontWeight: 950,
+              letterSpacing: 0,
+            }}
+          >
+            {keyword}
+          </div>
+          <div
+            style={{
+              position: "relative",
+              display: "inline-flex",
+              marginTop: 30,
+              padding: "12px 20px",
+              borderLeft: `4px solid ${theme.accent}`,
+              background: `${theme.accent}16`,
+              color: theme.muted,
+              fontSize: 24,
+              fontWeight: 760,
+            }}
+          >
+            {annotation}
+          </div>
+        </div>
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          left: 34,
+          right: 34,
+          bottom: 32,
+          opacity: enter,
+          transform: `translateY(${(1 - enter) * 34}px)`,
+        }}
+      >
+        <EvidenceWall
+          items={factItems.map((fact, index) => ({
+            label: index === 0 ? "事实边界" : "补充标注",
+            value: fact,
+          }))}
+          theme={visualTheme}
+          style={{
+            gridTemplateColumns: `repeat(${Math.min(factItems.length, 3)}, minmax(0, 1fr))`,
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 const VisualLibraryScene = ({ scene, directorType, theme }: { scene: Scene; directorType?: DirectorSceneType; theme: Theme }): ReactNode | null => {
   const visualTheme = toVisualTheme(theme);
   const metrics = metricItemsFromScene(scene);
@@ -4523,6 +4674,13 @@ const VisualLibraryScene = ({ scene, directorType, theme }: { scene: Scene; dire
   }
 
   if (directorType === "KeywordInvestigation" || hasComponent(scene, ["EvidenceDataSplit", "TwoKeywordInvestigation", "CautionBadge"])) {
+    if (scene.visualTreatment === "keyword-cutaway") {
+      return (
+        <VisualLibraryShell scene={scene} theme={theme}>
+          <KeywordCutawayFrame scene={scene} theme={theme} />
+        </VisualLibraryShell>
+      );
+    }
     const tags = contentStringList(scene, ["keywordTags"], 2);
     const facts = contentStringList(scene, ["factBoundary", "evidenceKeywords"], 3);
     const lines = directorMainText(scene, 14);

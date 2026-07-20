@@ -58,12 +58,34 @@ const sourceContains = (
   );
 };
 
-const title = (scene: Scene): string =>
-  scene.subtitle
+const title = (scene: Scene): string => {
+  const sentence = scene.subtitle
     .trim()
-    .replace(/[。！？!?]$/, "")
-    .split(/[，：；,;:]/)[0]
-    .slice(0, 18);
+    .split(/[。！？!?]/)
+    .map((item) => item.trim())
+    .find(Boolean) ?? "";
+  const clause = sentence
+    .split(/[，：；,;:]/)
+    .map((item) => item.trim())
+    .find(Boolean) ?? "";
+
+  if (!clause.includes("、") || clause.length <= 18) {
+    return clause.length <= 18 ? clause : clause.slice(0, 18);
+  }
+
+  const listItems = clause
+    .split("、")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const selected: string[] = [];
+  for (const item of listItems) {
+    const candidate = [...selected, item].join("、");
+    if (candidate.length > 18) break;
+    selected.push(item);
+  }
+
+  return selected.join("、") || clause.slice(0, 18);
+};
 
 const factualMetrics = (semantics: SceneSemantics) =>
   semantics.metrics.filter((item) => isFactualSource(item.source));

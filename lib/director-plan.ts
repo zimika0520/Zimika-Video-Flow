@@ -99,69 +99,79 @@ export const buildRuntimeDirectorPlan = (
     RenderInput,
     "scenes" | "narrativeLayer" | "videoArchetype" | "creativeBrief" | "directorScript" | "videoBrief" | "visualManifest" | "directorQualityTargets"
   >,
-): RuntimeDirectorPlan => ({
-  directorPlanVersion: 2,
-  sourceScenesFingerprint: createSourceScenesFingerprint(renderInput.scenes),
-  qualityTargets: renderInput.directorQualityTargets,
-  videoDirectorWorkflow,
-  remotionExecutionContract,
-  videoArchetype: renderInput.videoArchetype,
-  creativeBrief: renderInput.creativeBrief ?? { ...defaultCreativeBrief },
-  videoBrief: renderInput.videoBrief
-    ? {
-        topic: renderInput.videoBrief.topic,
-        audience: renderInput.videoBrief.audience,
-        coreAngle: renderInput.videoBrief.coreAngle,
-        whyWatch: renderInput.videoBrief.whyWatch,
-        visualDirection: renderInput.videoBrief.visualDirection,
-        subtitleStrategy: renderInput.videoBrief.subtitleStrategy,
-      }
-    : undefined,
-  visualManifestSummary: renderInput.visualManifest
-    ? {
-        totalScenes: renderInput.visualManifest.scenes.length,
-        scenesWithEvidenceAssets: renderInput.visualManifest.scenes.filter((scene) => scene.evidenceAsset).length,
-        declaredOverlapRisks: renderInput.visualManifest.scenes.reduce((total, scene) => total + scene.overlapRisks.length, 0),
-      }
-    : undefined,
-  narrativeArc: renderInput.narrativeLayer?.structure,
-  attentionCurve: renderInput.narrativeLayer?.attentionCurve ?? [],
-  peakMoments: renderInput.narrativeLayer?.peakMoments ?? [],
-  globalRules: {
-    requireShotVariety: true,
-    requireCameraMotion: true,
-    subtitleSafeArea: true,
-    noFullSubtitleDuplicationInMainVisual: true,
-  },
-  directorScriptSummary: renderInput.directorScript
-    ? {
-        totalScenes: renderInput.directorScript.scenes.length,
-        reviewChecklist: renderInput.directorScript.reviewChecklist,
-      }
-    : undefined,
-  scenes: renderInput.scenes.map(
-    (scene): DirectorPlanScene => ({
-      id: scene.id,
-      directorType: scene.directorType,
-      rendererFamily: scene.rendererFamily,
-      visualTreatment: scene.visualTreatment,
-      layout: scene.layout,
-      layoutRecipe: scene.layoutRecipe,
-      narrativeRole: scene.narrativeRole,
-      importance: scene.importance,
-      role: scene.role,
-      shotStyle: scene.shotStyle,
-      visualPriority: scene.visualPriority,
-      motionStyle: scene.motionStyle,
-      animation: scene.animation,
-      background: scene.background,
-      components: scene.components,
-      content: scene.content,
-      visualBrief: scene.visualBrief,
-      images: scene.images,
-    }),
-  ),
-});
+): RuntimeDirectorPlan => {
+  const visualManifestScenes = new Map(
+    (renderInput.visualManifest?.scenes ?? []).map((scene) => [
+      scene.sceneId,
+      scene,
+    ]),
+  );
+
+  return {
+    directorPlanVersion: 2,
+    sourceScenesFingerprint: createSourceScenesFingerprint(renderInput.scenes),
+    qualityTargets: renderInput.directorQualityTargets,
+    videoDirectorWorkflow,
+    remotionExecutionContract,
+    videoArchetype: renderInput.videoArchetype,
+    creativeBrief: renderInput.creativeBrief ?? { ...defaultCreativeBrief },
+    videoBrief: renderInput.videoBrief
+      ? {
+          topic: renderInput.videoBrief.topic,
+          audience: renderInput.videoBrief.audience,
+          coreAngle: renderInput.videoBrief.coreAngle,
+          whyWatch: renderInput.videoBrief.whyWatch,
+          visualDirection: renderInput.videoBrief.visualDirection,
+          subtitleStrategy: renderInput.videoBrief.subtitleStrategy,
+        }
+      : undefined,
+    visualManifestSummary: renderInput.visualManifest
+      ? {
+          totalScenes: renderInput.visualManifest.scenes.length,
+          scenesWithEvidenceAssets: renderInput.visualManifest.scenes.filter((scene) => scene.evidenceAsset).length,
+          declaredOverlapRisks: renderInput.visualManifest.scenes.reduce((total, scene) => total + scene.overlapRisks.length, 0),
+        }
+      : undefined,
+    narrativeArc: renderInput.narrativeLayer?.structure,
+    attentionCurve: renderInput.narrativeLayer?.attentionCurve ?? [],
+    peakMoments: renderInput.narrativeLayer?.peakMoments ?? [],
+    globalRules: {
+      requireShotVariety: true,
+      requireCameraMotion: true,
+      subtitleSafeArea: true,
+      noFullSubtitleDuplicationInMainVisual: true,
+    },
+    directorScriptSummary: renderInput.directorScript
+      ? {
+          totalScenes: renderInput.directorScript.scenes.length,
+          reviewChecklist: renderInput.directorScript.reviewChecklist,
+        }
+      : undefined,
+    scenes: renderInput.scenes.map(
+      (scene): DirectorPlanScene => ({
+        id: scene.id,
+        directorType: scene.directorType,
+        rendererFamily: scene.rendererFamily,
+        visualTreatment: scene.visualTreatment,
+        layout: scene.layout,
+        layoutRecipe: scene.layoutRecipe,
+        narrativeRole: scene.narrativeRole,
+        importance: scene.importance,
+        role: scene.role,
+        shotStyle: scene.shotStyle,
+        visualPriority: scene.visualPriority,
+        motionStyle: scene.motionStyle,
+        animation: scene.animation,
+        background: scene.background,
+        components: scene.components,
+        content: scene.content,
+        visualBrief: scene.visualBrief,
+        images: scene.images,
+        safeZones: visualManifestScenes.get(scene.id)?.safeZones,
+      }),
+    ),
+  };
+};
 
 export const writeRuntimeDirectorPlan = async (
   directorPlanPath: string,

@@ -2,7 +2,12 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { bindAssetsToScenes, extractAssetQueries, researchAssets } from "@/lib/asset-researcher";
+import {
+  assessResearchPageQuality,
+  bindAssetsToScenes,
+  extractAssetQueries,
+  researchAssets,
+} from "@/lib/asset-researcher";
 import type { RuntimeVideoBrief, RuntimeVisualManifest, Scene } from "@/lib/types";
 
 const tempDirs: string[] = [];
@@ -113,6 +118,54 @@ const visualManifest: RuntimeVisualManifest = {
 };
 
 describe("asset researcher", () => {
+  test.each([
+    [
+      "404 page",
+      "<html><head><title>404,您访问的页面已经不存在!</title></head><body>页面不存在</body></html>",
+    ],
+    [
+      "login page",
+      "<html><head><title>账号登录</title></head><body>请登录后继续访问，输入账号和密码完成登录。</body></html>",
+    ],
+    [
+      "verification page",
+      "<html><head><title>安全验证</title></head><body>访问过于频繁，请完成验证码后继续访问。</body></html>",
+    ],
+    [
+      "empty page",
+      "<html><head><title>腾讯应用宝</title></head><body><div></div></body></html>",
+    ],
+    [
+      "unrelated page",
+      `<html><head><title>世界杯赛程与球队名单</title></head><body>${"这是一篇介绍足球比赛、球队阵容、赛程安排和比赛结果的体育新闻。".repeat(8)}</body></html>`,
+    ],
+  ])("rejects unusable %s before capturing assets", (_label, html) => {
+    expect(
+      assessResearchPageQuality({
+        html,
+        pageUrl: "https://example.com/page",
+        queryTerms: ["腾讯应用宝", "跨端智能体", "本地文件管理"],
+      }).usable,
+    ).toBe(false);
+  });
+
+  test("accepts a relevant article page with readable content", () => {
+    const body =
+      "腾讯应用宝发布跨端智能体能力，重点处理本地文件管理、照片检索和软件诊断。" +
+      "这项更新让简单高频动作留在本地，复杂规划再交给云端模型。";
+
+    expect(
+      assessResearchPageQuality({
+        html: `<html><head><title>腾讯应用宝跨端智能体升级</title></head><body><article>${body.repeat(4)}</article></body></html>`,
+        pageUrl: "https://example.com/tencent-app-store",
+        queryTerms: ["腾讯应用宝", "跨端智能体", "本地文件管理"],
+      }),
+    ).toMatchObject({
+      usable: true,
+      title: "腾讯应用宝跨端智能体升级",
+    });
+  });
+
   test("extracts topic and proof-point queries", () => {
     expect(extractAssetQueries("DeepSeek 自主造芯片", "AI 芯片 算力 成本", brief)).toEqual(
       expect.arrayContaining(["DeepSeek 自主造芯片", "AI", "芯片"]),

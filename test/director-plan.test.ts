@@ -304,4 +304,21 @@ describe("runtime director plans", () => {
     expect(visualManifest.scenes[0].evidenceAsset).toBeUndefined();
     expect(plan.visualManifestSummary?.scenesWithEvidenceAssets).toBe(0);
   });
+
+  test("passes visual-manifest safe zones into the matching director scene", () => {
+    const visualManifest = buildVisualManifestFromScenes([baseScene]);
+    visualManifest.scenes[0].safeZones = {
+      subtitle: "bottom",
+      mainVisualAvoidsSubtitle: true,
+    };
+
+    const plan = buildRuntimeDirectorPlan({
+      scenes: [baseScene],
+      visualManifest,
+    });
+
+    expect(plan.scenes[0].safeZones).toEqual(
+      visualManifest.scenes[0].safeZones,
+    );
+  });
 });

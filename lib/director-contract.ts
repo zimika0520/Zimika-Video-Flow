@@ -1003,7 +1003,11 @@ export const validateDirectorContract = (
   const derivedComponents = new Set(
     hasUnverifiedContent
       ? []
-      : deriveDirectorComponents(directorType, input.content),
+      : deriveDirectorComponents(
+          directorType,
+          input.content,
+          input.scene.visualTreatment,
+        ),
   );
   for (const component of components) {
     if (derivedComponents.has(component)) continue;

@@ -77,6 +77,8 @@ export const resolveRenderablePrimaryVisual = (
     continue;
   }
 
+  if (explicitRefs.length > 0) return undefined;
+
   const binding = manifest.sceneBindings.find(
     (candidate) => candidate.sceneId === scene.id,
   );
