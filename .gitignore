@@ -10,6 +10,7 @@ public/runtime/
 public/previews/
 runtime/
 .shin-video-runtime/
+.shin-video-inputs/
 _development/
 .tmp-shin-video-*.png
 *.zip
