@@ -7,6 +7,25 @@ description: Shin-video 视频生成总控 Skill。用于把文章或文章链�
 
 你是 Shin-video 唯一的公开工作流入口。你的任务是判断用户现在给了什么材料，并按需执行对应的内部生产模块。
 
+## 运行模式
+
+默认运行模式：production。
+
+普通的视频制作、继续制作、重新渲染、调整口播、调整画面和交付请求，全部属于生产模式。用户说“继续当前项目”时，默认含义是继续当前视频的生产产物和渲染进度，不是继续开发仓库。
+
+只有用户明确要求修改、升级、开发、重构或修复 Shin-video 插件、引擎或源码时，才进入 development 模式。安装、API 配置和环境故障排查不等于 development，也不授权修改源码。
+
+生产模式下：
+
+- 只读取插件、引擎、当前项目材料和必要的网络素材。
+- 只写入本机配置、项目运行目录和最终输出目录。
+- 生产模式下禁止修改 `plugins/`、`skills/`、`lib/`、`remotion/`、`scripts/`、`test/`、插件清单和 Git 状态。
+- 不 commit、不 push、不发布，不创建或切换分支。
+- 不运行 `npm run test`、`npm run build`、`npm run verify-workflow` 或其他开发验证。
+- 遇到引擎、模板或组件能力缺失时，停止受影响阶段并用普通语言报告阻塞原因；不得自行修改源码来继续生产。
+
+首次安装、配置或环境故障排查时可以运行 `npm run doctor`，也可以写入用户明确提供的本机配置，但仍不得修改源码。只有用户随后明确授权开发，才能切换到 development 模式。
+
 > 路径约定：`RUN_DIR` 表示当前项目的 `<项目目录>/_runtime/<run-id>/`。`public/runtime/` 仅用于 Remotion 静态资源，不得作为项目中间产物目录。
 
 ## 用户体验原则
@@ -108,7 +127,7 @@ production gate 未通过，不允许进入渲染。
 
 `RUN_DIR/scenes.json` 也不能只写字幕。每个 scene 必须尽量包含 `sceneType`、`visualIntent`、`layoutRecipe`、`motionVariant`、`transition`、`visualModules`、`pace`。Remotion 模板必须按 `sceneType` 分发到不同场景组件，并按 `motionVariant` / `visualModules` 组合动画。这样同一条视频可以保持统一主题，但每 5-15 秒呈现方式不同，避免整条片子像同一个 PPT 模板循环。
 
-如果模板或渲染命令没有读取 `RUN_DIR/director-plan.json` 和 `RUN_DIR/style-profile.json`，或没有使用 scene 里的 `sceneType` / `motionVariant` / `visualModules` 以及导演方案里的 `directorType` / `shotStyle` / `cameraMotion` / `remotionExecutionContract`，要先修模板或命令，不要继续交付低质量成片。
+如果模板或渲染命令没有读取 `RUN_DIR/director-plan.json` 和 `RUN_DIR/style-profile.json`，或没有使用 scene 里的 `sceneType` / `motionVariant` / `visualModules` 以及导演方案里的 `directorType` / `shotStyle` / `cameraMotion` / `remotionExecutionContract`，立即停止受影响的生产阶段，并报告当前安装的引擎与导演合同不兼容。只有用户明确要求修复或升级源码后，才能进入 development 模式处理；不得在生产模式中自行修改模板或命令。
 
 production gate 只负责阻断会直接导致渲染失败或音画错位的问题：无可用 scene、缺最终音频或口播文案、缺服务商原生时间轴、音频/文案指纹失效、导演方案与 scenes 不匹配、缺可执行风格配置。Brief、素材证据、视觉清单、字幕复读和导演语义质量由各自生成模块检查一次，不在渲染前重复审查。
 
@@ -151,3 +170,5 @@ RUN_DIR/style-profile.json
 - 最终视频必须输出到 `<项目目录>/<视频标题>.mp4`，不得写入其他目录。
 - 不要复用上一条视频的背景、排版和动效模板来糊弄当前文章。
 - 不要把 `npm run doctor`、`npm run test`、`npm run build` 或 `npm run verify-workflow` 作为日常视频制作步骤。
+- 不要把普通制作、继续制作、重新渲染、内容调整或交付请求解释成插件开发任务。
+- 不要在 production 模式中修改源码、Skill、插件文件、测试或 Git 状态。
