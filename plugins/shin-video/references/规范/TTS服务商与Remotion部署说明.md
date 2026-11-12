@@ -1,6 +1,6 @@
 # TTS 服务商与 Remotion 部署说明
 
-这份说明给 Agent 和部署人员使用，用于在新机器上配置 Shin-video 的音频、时间轴和本地视频渲染环境。
+这份说明给 Agent 和部署人员使用，用于在新机器上配置 Zimika Video Flow 的音频、时间轴和本地视频渲染环境。
 
 ## 一、部署目标
 
@@ -23,7 +23,7 @@ Node.js
 npm
 FFmpeg
 Remotion
-Shin-video 模板和视觉组件库
+Zimika Video Flow 模板和视觉组件库
 至少一个支持原生时间戳的 TTS 服务商
 ```
 
@@ -151,10 +151,10 @@ segments 按时间递增
 
 ## 七、部署 Remotion
 
-进入完整 Shin-video 项目：
+进入完整 Zimika Video Flow 项目：
 
 ```bash
-cd "/path/to/Shin-video"
+cd "/path/to/Zimika Video Flow"
 npm install
 npx remotion --version
 npm run doctor
@@ -186,7 +186,7 @@ npm install remotion @remotion/cli @remotion/renderer @remotion/bundler
 ffmpeg -version
 ```
 
-仅创建一个空白 Remotion 项目不能替代 Shin-video 模板。正式部署还必须包含：
+仅创建一个空白 Remotion 项目不能替代 Zimika Video Flow 模板。正式部署还必须包含：
 
 ```text
 Remotion 入口
@@ -279,4 +279,4 @@ npm run doctor
 - 不允许服务商返回文本覆盖确认后的口播文案。
 - 不复用与当前音频或文案指纹不一致的旧时间轴。
 - 不把真实密钥写入版本库或公开材料。
-- 不把空白 Remotion 项目描述成完整 Shin-video 渲染环境。
+- 不把空白 Remotion 项目描述成完整 Zimika Video Flow 渲染环境。

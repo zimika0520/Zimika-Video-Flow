@@ -1,6 +1,6 @@
 ---
 module: Remotion渲染
-description: 调用 Remotion 使用 RUN_DIR/scenes.json、RUN_DIR/style-profile.json 和 口播音频.mp3 直接渲染 Shin-video 最终成片，并做轻量质量检查。
+description: 调用 Remotion 使用 RUN_DIR/scenes.json、RUN_DIR/style-profile.json 和 口播音频.mp3 直接渲染 Zimika Video Flow 最终成片，并做轻量质量检查。
 ---
 
 # Remotion 渲染成片
@@ -106,7 +106,7 @@ style-profile.json -> 提供统一主题、色彩、字体、安全区、动效�
 
 ## 环境检查
 
-在 Shin-video 项目根目录先检查：
+在 Zimika Video Flow 项目根目录先检查：
 
 ```bash
 node -v
@@ -137,7 +137,7 @@ Skill 文档已要求读取 RUN_DIR/director-plan.json 和 RUN_DIR/style-profile
 npm run verify-workflow
 ```
 
-Remotion 依赖必须版本对齐。当前 Shin-video 模板要求：
+Remotion 依赖必须版本对齐。当前 Zimika Video Flow 模板要求：
 
 ```text
 remotion 4.0.484
@@ -159,7 +159,7 @@ npm install zod@4.3.6 remotion@4.0.484 @remotion/cli@4.0.484 @remotion/bundler@4
 ../../references/规范/TTS服务商与Remotion部署说明.md
 ```
 
-已有 Shin-video 项目时，优先执行：
+已有 Zimika Video Flow 项目时，优先执行：
 
 ```bash
 npm install

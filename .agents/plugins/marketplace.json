@@ -1,7 +1,7 @@
 {
-  "name": "shin-video",
+  "name": "zimika-video-flow-marketplace",
   "interface": {
-    "displayName": "Shin-video"
+    "displayName": "Zimika Video Flow"
   },
   "plugins": [
     {

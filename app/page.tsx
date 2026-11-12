@@ -468,7 +468,7 @@ export default function HomePage() {
         element.id === "headline-main"
           ? { ...element, text: cleanName, name: "主标题" }
           : element.id === "subtitle-main"
-            ? { ...element, text: "确认文案和音频后，Shin-video 会按时间轴生成这条视频。" }
+            ? { ...element, text: "确认文案和音频后，Zimika Video Flow 会按时间轴生成这条视频。" }
             : element,
       ),
     );

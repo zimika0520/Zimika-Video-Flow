@@ -177,7 +177,7 @@ const checks: Check[] = [
     },
   },
   {
-    name: "plugin exposes one public Shin-video entry",
+    name: "plugin exposes one public Zimika Video Flow entry",
     run: () => {
       assertFile(publicSkillPath);
       assert(!existsSync(file(`${pluginRoot}/skills/shin-video-director/SKILL.md`)), "legacy public director skill must not remain");
@@ -197,7 +197,7 @@ const checks: Check[] = [
       assert(workflowManifest.entrySkill?.path === "skills/shin-video/SKILL.md", "workflow manifest entry path must target the public skill");
       assert(workflowManifest.skillCounts?.total === 1, "workflow manifest must declare one public skill");
       [workflowManifest.version, codexManifest.version, releaseManifest.version].forEach((version) => {
-        assert(version === "0.1.2", "all plugin manifests must use version 0.1.2");
+        assert(version === "0.2.0-zimika.1", "all plugin manifests must use version 0.2.0-zimika.1");
       });
       assert(codexManifest.name === "shin-video" && releaseManifest.name === "shin-video", "plugin manifest names must match");
     },
@@ -250,4 +250,4 @@ if (failures > 0) {
   process.exit(1);
 }
 
-console.log("\nShin-video doctor checks passed. The installed engine and single public plugin entry are ready for use.");
+console.log("\nZimika Video Flow doctor checks passed. The installed engine and single public plugin entry are ready for use.");

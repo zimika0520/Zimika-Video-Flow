@@ -1,10 +1,10 @@
-# Shin-video Agent Guide
+# Zimika Video Flow Agent Guide
 
 `shin-video` 是唯一公开入口。它根据用户现有材料在内部路由完整生产链路；不要向用户暴露或要求安装阶段 Skill。
 
 ## 默认模式
 
-默认使用 `production` 模式。文章转视频、继续当前视频、重新渲染、修改口播或画面、交付成片，都只推进视频项目，不修改 Shin-video 仓库。
+默认使用 `production` 模式。文章转视频、继续当前视频、重新渲染、修改口播或画面、交付成片，都只推进视频项目，不修改 Zimika Video Flow 仓库。
 
 只有用户明确要求修改、升级、开发、重构或修复插件、引擎或源码，才切换到 `development` 模式。安装、API 配置和环境排查可以运行 `npm run doctor`，但不授权修改源码。
 
@@ -60,4 +60,4 @@ skills/shin-video/SKILL.md
 
 ## 引擎边界
 
-插件负责工作流编排和质量规则。TTS、素材处理、Production Gate 与 Remotion 渲染由 Shin-video 本地引擎执行。引擎通过 `SHIN_VIDEO_ENGINE_ROOT` 或配置文件定位；不得假设用户目录或固定绝对路径。
+插件负责工作流编排和质量规则。TTS、素材处理、Production Gate 与 Remotion 渲染由 Zimika Video Flow 本地引擎执行。引擎通过 `SHIN_VIDEO_ENGINE_ROOT` 或配置文件定位；不得假设用户目录或固定绝对路径。

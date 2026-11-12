@@ -1,19 +1,19 @@
 {
   "name": "shin-video",
-  "version": "0.1.2",
-  "description": "将文章或链接组织为带口播、字幕、外部素材、导演方案和 Remotion 成片的本地视频工作流。",
+  "version": "0.2.0-zimika.1",
+  "description": "Zimika 的本地文章转口播视频、字幕时间轴、制作门禁与 Remotion 渲染工作流。",
   "author": {
-    "name": "Shinchan-crayon",
-    "url": "https://github.com/Shinchan-crayon"
+    "name": "Zimika",
+    "url": "https://github.com/zimika0520"
   },
-  "homepage": "https://github.com/Shinchan-crayon/Shin-video",
-  "repository": "https://github.com/Shinchan-crayon/Shin-video",
+  "homepage": "https://github.com/zimika0520/Zimika-Video-Flow",
+  "repository": "https://github.com/zimika0520/Zimika-Video-Flow",
   "skills": "../skills/",
   "interface": {
-    "displayName": "Shin-video",
+    "displayName": "Zimika Video Flow",
     "shortDescription": "文章进，导演方案、素材、口播、字幕和本地成片出。",
     "longDescription": "兼容发布清单。实际插件入口见 .codex-plugin/plugin.json。",
-    "developerName": "Shinchan-crayon",
+    "developerName": "Zimika",
     "category": "Productivity",
     "capabilities": ["Guided workflow", "Local rendering", "Video production"],
     "composerIcon": "../assets/icon.svg",

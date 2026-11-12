@@ -1,11 +1,11 @@
 {
   "name": "shin-video",
-  "displayName": "Shin-video",
-  "version": "0.1.2",
+  "displayName": "Zimika Video Flow",
+  "version": "0.2.0-zimika.1",
   "summary": "先完成内容、音频时间轴、素材和导演方案，再由本地 Remotion 引擎渲染视频。",
   "entrySkill": {
     "name": "shin-video",
-    "displayName": "Shin-video",
+    "displayName": "Zimika Video Flow",
     "path": "skills/shin-video/SKILL.md"
   },
   "skillCounts": {

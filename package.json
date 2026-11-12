@@ -1,6 +1,7 @@
 {
-  "name": "shin-video",
-  "version": "0.1.1",
+  "name": "zimika-video-flow",
+  "version": "0.2.0-zimika.1",
+  "description": "Zimika's local article-to-video Agent workflow with TTS timelines, production gates, and Remotion rendering.",
   "private": true,
   "scripts": {
     "dev": "next dev",

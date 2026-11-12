@@ -1,5 +1,5 @@
 {
-  "engineRoot": "/path/to/Shin-video",
+  "engineRoot": "/path/to/Zimika-Video-Flow",
   "outputRoot": "/path/to/video-output",
   "tts": {
     "provider": "minimax",

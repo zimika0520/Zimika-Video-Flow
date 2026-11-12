@@ -1,4 +1,4 @@
-# Shin-video Remotion 视觉组件库
+# Zimika Video Flow Remotion 视觉组件库
 
 这份组件库的目标不是堆素材，而是让导演系统可以按内容选择合适的画面表达。
 

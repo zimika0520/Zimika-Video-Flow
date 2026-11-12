@@ -2,9 +2,9 @@
 
 这份手册用于渲染前引导用户选择视觉风格。不要把 API 细节直接甩给用户。
 
-## Shin-video 强制导演层
+## Zimika Video Flow 强制导演层
 
-Shin-video 不能只把 `RUN_DIR/scenes.json` 直接丢给 Remotion 套模板。
+Zimika Video Flow 不能只把 `RUN_DIR/scenes.json` 直接丢给 Remotion 套模板。
 
 正确链路是：
 
@@ -75,9 +75,9 @@ interpolateColors()
 @remotion/transitions
 ```
 
-## Shin-video 风格选择
+## Zimika Video Flow 风格选择
 
-Shin-video 不设置默认风格。渲染前必须先询问用户画面需求，再生成 `RUN_DIR/style-profile.json`。
+Zimika Video Flow 不设置默认风格。渲染前必须先询问用户画面需求，再生成 `RUN_DIR/style-profile.json`。
 
 可选风格库：
 

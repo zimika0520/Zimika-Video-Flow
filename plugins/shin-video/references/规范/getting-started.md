@@ -1,6 +1,6 @@
-# Shin-video 新手使用指南
+# Zimika Video Flow 新手使用指南
 
-这份指南面向第一次使用 Shin-video 的用户。唯一公开入口是 `shin-video`。你只需要准备文章、配置一个支持原生时间戳的 TTS 服务商，并准备本地 Remotion 渲染环境；无需安装或调用额外阶段 Skill。
+这份指南面向第一次使用 Zimika Video Flow 的用户。唯一公开入口是 `shin-video`。你只需要准备文章、配置一个支持原生时间戳的 TTS 服务商，并准备本地 Remotion 渲染环境；无需安装或调用额外阶段 Skill。
 
 ## 一、工作流会做什么
 
@@ -28,7 +28,7 @@
 
 ## 二、准备本地环境
 
-首次安装、引擎更新或环境故障排查时，进入 Shin-video 项目目录后检查：
+首次安装、引擎更新或环境故障排查时，进入 Zimika Video Flow 项目目录后检查：
 
 ```bash
 node -v

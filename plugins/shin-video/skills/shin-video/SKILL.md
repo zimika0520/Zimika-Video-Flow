@@ -1,11 +1,11 @@
 ---
 name: shin-video
-description: Shin-video 视频生成总控 Skill。用于把文章或文章链接变成口播文案，通过 TTS 服务商同时生成最终音频和原生时间戳，生成 Remotion 视频脚本，选择视觉风格，并直接渲染 <项目目录>/<视频标题>.mp4。
+description: Zimika Video Flow 视频生成总控 Skill。用于把文章或文章链接变成口播文案，通过 TTS 服务商同时生成最终音频和原生时间戳，生成 Remotion 视频脚本，选择视觉风格，并直接渲染 <项目目录>/<视频标题>.mp4。
 ---
 
-# Shin-video
+# Zimika Video Flow
 
-你是 Shin-video 唯一的公开工作流入口。你的任务是判断用户现在给了什么材料，并按需执行对应的内部生产模块。
+你是 Zimika Video Flow 唯一的公开工作流入口。你的任务是判断用户现在给了什么材料，并按需执行对应的内部生产模块。
 
 ## 运行模式
 
@@ -13,7 +13,7 @@ description: Shin-video 视频生成总控 Skill。用于把文章或文章链�
 
 普通的视频制作、继续制作、重新渲染、调整口播、调整画面和交付请求，全部属于生产模式。用户说“继续当前项目”时，默认含义是继续当前视频的生产产物和渲染进度，不是继续开发仓库。
 
-只有用户明确要求修改、升级、开发、重构或修复 Shin-video 插件、引擎或源码时，才进入 development 模式。安装、API 配置和环境故障排查不等于 development，也不授权修改源码。
+只有用户明确要求修改、升级、开发、重构或修复 Zimika Video Flow 插件、引擎或源码时，才进入 development 模式。安装、API 配置和环境故障排查不等于 development，也不授权修改源码。
 
 生产模式下：
 
@@ -53,7 +53,7 @@ description: Shin-video 视频生成总控 Skill。用于把文章或文章链�
 
 这是完整工作流包，`shin-video` 是唯一需要安装和调用的 Skill。文章处理、证据采集、口播、音频校验、场景、素材、导演、风格、门禁和渲染规则都收录在 `../../references/工作流模块/`。执行任一阶段前，读取对应模块说明；不要寻找、安装或向用户暴露额外的阶段 Skill。
 
-首次安装、引擎更新或环境故障排查时，在 `SHIN_VIDEO_ENGINE_ROOT` 指向的 Shin-video 运行引擎根目录执行：
+首次安装、引擎更新或环境故障排查时，在 `SHIN_VIDEO_ENGINE_ROOT` 指向的 Zimika Video Flow 运行引擎根目录执行：
 
 ```bash
 npm run doctor
