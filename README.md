@@ -2,6 +2,8 @@
 
 将文章、新闻链接或长文制作成带口播、字幕、证据素材、导演方案和 Remotion 动效的本地短视频。
 
+GitHub: https://github.com/zimika0520/Zimika-Video-Flow
+
 Zimika Video Flow 是 Zimika 的二次开发作品，核心代码来自 [Shin-video](https://github.com/Shinchan-crayon/Shin-video)。它不把正文直接堆成卡片，而是先生成视频 Brief、口播、时间轴、素材清单和导演方案，再通过质量门禁交给 Remotion 渲染。来源与使用边界见 [UPSTREAM.md](UPSTREAM.md)。
 
 ```mermaid

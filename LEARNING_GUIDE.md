@@ -5,7 +5,7 @@
 ## 第 1 天：环境与基线
 
 ```bash
-cd /Users/pinganye/Documents/Codex/jianli/Zimika-Video-Flow
+cd Zimika-Video-Flow
 npm ci
 npm test -- --run
 npm run build
