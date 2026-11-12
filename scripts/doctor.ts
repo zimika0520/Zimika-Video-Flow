@@ -71,6 +71,10 @@ const checks: Check[] = [
     run: () => {
       assert(packageJson.scripts?.doctor === "tsx scripts/doctor.ts", "package.json must expose npm run doctor");
       assert(packageJson.scripts?.build, "package.json must expose npm run build");
+      assert(
+        packageJson.scripts?.["handoff-brief"] === "tsx scripts/production-handoff.ts",
+        "package.json must expose npm run handoff-brief",
+      );
       assert(packageJson.scripts?.["verify-workflow"], "package.json must expose npm run verify-workflow");
     },
   },
@@ -113,10 +117,25 @@ const checks: Check[] = [
     run: () => {
       ["remotion/index.ts", "remotion/Root.tsx", "remotion/Video.tsx"].forEach(assertFile);
       ["lib/remotion-render.ts", "lib/production-gate.ts", "app/api/export-video/route.ts"].forEach(assertFile);
+      [
+        "lib/production-handoff.ts",
+        "scripts/production-handoff.ts",
+        "test/production-handoff.test.ts",
+      ].forEach(assertFile);
       assertContains(
         "lib/remotion-render.ts",
         /validateProductionGateFiles/,
         "renderer must validate the production gate before rendering",
+      );
+      assertContains(
+        "lib/production-handoff.ts",
+        /inspectProductionHandoff/,
+        "production handoff must inventory all render inputs",
+      );
+      assertContains(
+        "lib/production-handoff.ts",
+        /buildProductionHandoffBrief/,
+        "production handoff must produce a deterministic next-action brief",
       );
       assertContains(
         "lib/remotion-render.ts",
@@ -197,7 +216,7 @@ const checks: Check[] = [
       assert(workflowManifest.entrySkill?.path === "skills/shin-video/SKILL.md", "workflow manifest entry path must target the public skill");
       assert(workflowManifest.skillCounts?.total === 1, "workflow manifest must declare one public skill");
       [workflowManifest.version, codexManifest.version, releaseManifest.version].forEach((version) => {
-        assert(version === "0.2.0-zimika.1", "all plugin manifests must use version 0.2.0-zimika.1");
+        assert(version === "0.3.0-zimika.1", "all plugin manifests must use version 0.3.0-zimika.1");
       });
       assert(codexManifest.name === "shin-video" && releaseManifest.name === "shin-video", "plugin manifest names must match");
     },

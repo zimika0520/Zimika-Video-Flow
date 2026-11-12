@@ -1,6 +1,6 @@
 {
   "name": "zimika-video-flow",
-  "version": "0.2.0-zimika.1",
+  "version": "0.3.0-zimika.1",
   "description": "Zimika's local article-to-video Agent workflow with TTS timelines, production gates, and Remotion rendering.",
   "private": true,
   "scripts": {
@@ -11,6 +11,7 @@
     "check": "npm run test && npm run build",
     "doctor": "tsx scripts/doctor.ts",
     "production-gate": "tsx scripts/production-gate.ts",
+    "handoff-brief": "tsx scripts/production-handoff.ts",
     "shin-video:lite": "tsx scripts/shin-video-lite.ts",
     "verify-delivery": "node scripts/validate-delivery-polish.mjs",
     "verify-workflow": "npm run doctor && npm run verify-skill-visual-gate && npm run verify-delivery && npm run test && npm run build",

@@ -6,6 +6,8 @@ GitHub: https://github.com/zimika0520/Zimika-Video-Flow
 
 Zimika Video Flow 是 Zimika 的二次开发作品，核心代码来自 [Shin-video](https://github.com/Shinchan-crayon/Shin-video)。它不把正文直接堆成卡片，而是先生成视频 Brief、口播、时间轴、素材清单和导演方案，再通过质量门禁交给 Remotion 渲染。来源与使用边界见 [UPSTREAM.md](UPSTREAM.md)。
 
+当前版本：`0.3.0-zimika.1`
+
 ```mermaid
 flowchart LR
   A["文章 / 链接"] --> B["内容与证据"]
@@ -32,6 +34,22 @@ flowchart LR
 - [插件说明](plugins/shin-video/README.md)
 - [首次使用](plugins/shin-video/references/规范/getting-started.md)
 - [TTS 与 Remotion 配置](plugins/shin-video/references/规范/TTS服务商与Remotion部署说明.md)
+
+## Production Handoff Brief
+
+视频制作中断后，先运行接手诊断：
+
+```bash
+npm run handoff-brief -- --run-dir=/path/to/RUN_DIR
+```
+
+它会逐个检查视频 Brief、场景、素材清单、视觉清单、导演方案、风格配置、服务商原生字幕时间轴、最终音频和口播文案，然后按以下顺序返回唯一首要动作：
+
+```text
+修复损坏文件 → 补齐缺失文件 → 处理 Production Gate 错误 → 允许渲染
+```
+
+诊断结果写入 `RUN_DIR/production-handoff-brief.json`，不会修改任何视频制品。只有 `readiness.canRender=true` 且 `recommendedAction.kind=render_video` 时，才表示可以进入最终 Remotion 渲染。
 
 ## 本地引擎
 
@@ -63,9 +81,12 @@ test/                自动化测试
 ## Zimika 的工程整理
 
 - 统一应用、插件市场、页面标题和展示素材的品牌。
+- 新增 `Production Handoff Brief`，把 9 个渲染输入的缺失、损坏、门禁错误和安全下一步汇总为稳定 JSON 契约。
 - 增加 `LEARNING_GUIDE.md`，覆盖安装、测试、页面启动、核心链路和面试讲法。
-- 保留完整测试与构建流程；当前本地验证为 566 项测试通过，Next.js 生产构建成功。
+- 保留完整测试与构建流程；当前本地验证为 571 项测试通过，Next.js 生产构建成功。
 - 保留上游来源、作者和授权说明，不把上游实现整体冒充为从零原创。
+
+完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 快速验证
 

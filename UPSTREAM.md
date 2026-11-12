@@ -6,7 +6,7 @@ modified by work in this repository.
 
 - Upstream repository: https://github.com/Shinchan-crayon/Shin-video
 - Upstream commit used: `4a5f6c1e3532cf91446487e70ae2c4dfa6354556`
-- Zimika package version: `0.2.0-zimika.1`
+- Zimika package version: `0.3.0-zimika.1`
 - Upstream has no repository-level LICENSE file.
 
 The upstream author has authorized this secondary development according to the

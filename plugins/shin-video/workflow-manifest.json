@@ -1,7 +1,7 @@
 {
   "name": "shin-video",
   "displayName": "Zimika Video Flow",
-  "version": "0.2.0-zimika.1",
+  "version": "0.3.0-zimika.1",
   "summary": "先完成内容、音频时间轴、素材和导演方案，再由本地 Remotion 引擎渲染视频。",
   "entrySkill": {
     "name": "shin-video",
@@ -22,6 +22,7 @@
     "文章与外部证据采集",
     "导演方案与视觉清单",
     "Production Gate",
+    "Production Handoff Brief",
     "Remotion 最终 MP4"
   ]
 }

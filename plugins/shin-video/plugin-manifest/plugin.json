@@ -1,6 +1,6 @@
 {
   "name": "shin-video",
-  "version": "0.2.0-zimika.1",
+  "version": "0.3.0-zimika.1",
   "description": "Zimika 的本地文章转口播视频、字幕时间轴、制作门禁与 Remotion 渲染工作流。",
   "author": {
     "name": "Zimika",

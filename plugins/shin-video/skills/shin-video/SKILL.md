@@ -83,8 +83,9 @@ MiniMax 和火山引擎是内置 TTS 选项，不是唯一入口。其他服务�
 8. 如果已有 `RUN_DIR/scenes.json`、`RUN_DIR/asset-manifest.json` 和 `RUN_DIR/visual-manifest.json`，但没有 `RUN_DIR/director-plan.json`：必须执行“导演方案”，先完成 `Think -> Design -> Build -> Review`。
 9. 如果已有 `RUN_DIR/director-plan.json`：先确认它的 `sourceScenesFingerprint` 与当前 `RUN_DIR/scenes.json` 匹配；不匹配时必须重新生成导演视觉系统。匹配后再确认用户已经看过并认可导演稿；未确认时停下让用户审，不进入风格和渲染。
 10. 如果用户已确认导演稿：进入渲染前视觉风格硬性门禁，执行“视觉风格确认”和“动画与风格系统”。
-11. 如果已有 `RUN_DIR/style-profile.json`：调用“Remotion 渲染”。渲染器内部只检查场景、最终音频、原生时间轴、口播文案、导演方案和风格配置是否可安全渲染；通过后直接生成 `<项目目录>/<视频标题>.mp4`。
-12. 成片生成后只执行基础媒体有效性检查：文件存在、可播放、有声音、时长接近最终音频、尺寸正确，并排除持续黑屏。日常渲染不抽取代表帧，不生成临时 QA 截图。只有用户明确要求审片时，才额外生成预览和审片材料。
+11. 如果已有 `RUN_DIR/style-profile.json`：可以运行 `npm run handoff-brief -- --run-dir=<RUN_DIR>` 做只读接手诊断。该命令盘点九项输入，并先报损坏文件、缺失文件或 Production Gate 错误；只有 `recommendedAction.kind=render_video` 时才进入“Remotion 渲染”。诊断报告写入 `RUN_DIR/production-handoff-brief.json`，不得替代渲染器内部 Production Gate。
+12. Remotion 渲染器继续硬性复核场景、最终音频、原生时间轴、口播文案、导演方案和风格配置；通过后生成 `<项目目录>/<视频标题>.mp4`。
+13. 成片生成后只执行基础媒体有效性检查：文件存在、可播放、有声音、时长接近最终音频、尺寸正确，并排除持续黑屏。日常渲染不抽取代表帧，不生成临时 QA 截图。只有用户明确要求审片时，才额外生成预览和审片材料。
 
 ## 渲染前视觉风格硬性门禁
 
